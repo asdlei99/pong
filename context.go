@@ -2,9 +2,15 @@ package pong
 
 import "net/http"
 
+// Incoming requests to a server will create a Context
+// Context can be use to:
+// 	get HTTP request param query...
+// 	send HTTP response like JSON JSONP XML HTML file ...
+// Context is handle by middleware list in order
 type Context struct {
 	pong      *Pong
 	dataStore map[string]interface{}
+	//
 	Session   *Session
 	Request   *Request
 	Response  *Response
