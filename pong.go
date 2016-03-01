@@ -11,7 +11,7 @@ import (
 
 var (
 	SessionCookiesName = "SESSIONID"
-	ErrorContentTypeNotSupport = errors.New("http content type not support")
+	ErrorTypeNotSupport = errors.New("type not support")
 )
 
 type(

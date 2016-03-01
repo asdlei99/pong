@@ -9,6 +9,7 @@ import (
 	"errors"
 	"strconv"
 	"io/ioutil"
+	"mime/multipart"
 )
 
 type Request struct {
@@ -25,25 +26,21 @@ func (req *Request)Query(name string) string {
 }
 
 func (req *Request)Form(name string) string {
-	return req.HTTPRequest.FormValue(name)
+	return req.HTTPRequest.PostFormValue(name)
+}
+
+func (req *Request)File(name string) (multipart.File, *multipart.FileHeader, error) {
+	return req.HTTPRequest.FormFile(name)
 }
 
 func (req *Request)BindJSON(pointer interface{}) error {
-	bs, err := ioutil.ReadAll(req.HTTPRequest.Body)
-	if err != nil {
-		return err
-	}else {
-		return json.Unmarshal(bs, pointer)
-	}
+	bs, _ := ioutil.ReadAll(req.HTTPRequest.Body)
+	return json.Unmarshal(bs, pointer)
 }
 
 func (req *Request)BindXML(pointer interface{}) error {
-	bs, err := ioutil.ReadAll(req.HTTPRequest.Body)
-	if err != nil {
-		return err
-	}else {
-		return xml.Unmarshal(bs, pointer)
-	}
+	bs, _ := ioutil.ReadAll(req.HTTPRequest.Body)
+	return xml.Unmarshal(bs, pointer)
 }
 
 func (req *Request)BindForm(pointer interface{}) error {
@@ -56,7 +53,7 @@ func (req *Request)BindForm(pointer interface{}) error {
 		req.HTTPRequest.ParseMultipartForm(32 << 20)//32 MB
 		return bind(pointer, req.HTTPRequest.Form)
 	default:
-		return ErrorContentTypeNotSupport
+		return ErrorTypeNotSupport
 	}
 }
 
@@ -79,11 +76,10 @@ func (req *Request)AutoBind(pointer interface{}) error {
 		req.HTTPRequest.ParseMultipartForm(32 << 20)//32 MB
 		return bind(pointer, req.HTTPRequest.Form)
 	default:
-		return ErrorContentTypeNotSupport
+		return ErrorTypeNotSupport
 	}
 }
 
-//TODO check
 func bind(pointer interface{}, m map[string][]string) error {
 	if pointer == nil {
 		return errors.New("can't bind to nil")
@@ -100,27 +96,13 @@ func bind(pointer interface{}, m map[string][]string) error {
 		if !structField.CanSet() {
 			continue
 		}
-
-		structFieldKind := structField.Kind()
-		inputFieldName := typeField.Tag.Get("form")
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-
-			if structFieldKind == reflect.Struct {
-				err := bind(structField.Addr().Interface(), m)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
+		inputFieldName := typeField.Name
 		inputValue, exists := m[inputFieldName]
 		if !exists {
 			continue
 		}
-
-		numElems := len(inputValue)
-		if structFieldKind == reflect.Slice && numElems > 0 {
+		structFieldKind := structField.Kind()
+		if numElems := len(inputValue); structFieldKind == reflect.Slice && numElems > 0 {
 			sliceOf := structField.Type().Elem().Kind()
 			slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
 			for i := 0; i < numElems; i++ {
@@ -169,7 +151,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 	case reflect.String:
 		structField.SetString(val)
 	default:
-		return errors.New("Unknown type")
+		return ErrorTypeNotSupport
 	}
 	return nil
 }

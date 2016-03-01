@@ -9,6 +9,10 @@ import (
 	"reflect"
 	"encoding/xml"
 	"net/url"
+	"mime/multipart"
+	"os"
+	"io"
+	"io/ioutil"
 )
 
 type testUser struct {
@@ -141,7 +145,7 @@ func TestBindXML(t *testing.T) {
 	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
-func TestBindForm(t *testing.T) {
+func TestBindApplicationForm(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
@@ -153,6 +157,10 @@ func TestBindForm(t *testing.T) {
 	root.Post("/hi", func(c *Context) {
 		bindUser := testUser{}
 		c.Request.BindForm(&bindUser)
+		if !reflect.DeepEqual(bindUser, user) {
+			t.Error(bindUser, user)
+		}
+		c.Request.AutoBind(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
 		}
@@ -168,6 +176,40 @@ func TestBindForm(t *testing.T) {
 		"Money":[]string{"123.456"},
 		"Alive":[]string{"true"},
 	})
+}
+
+func TestBindMultipartForm(t *testing.T) {
+	po, baseURL := runPong()
+	root := po.Root
+	user := testUser{
+		Name:"吴浩麟",
+		Age:23,
+		Money:123.456,
+		Alive:true,
+	}
+	root.Post("/hi", func(c *Context) {
+		bindUser := testUser{}
+		c.Request.BindForm(&bindUser)
+		if !reflect.DeepEqual(bindUser, user) {
+			t.Error(bindUser, user)
+		}
+		c.Request.AutoBind(&bindUser)
+		if !reflect.DeepEqual(bindUser, user) {
+			t.Error(bindUser, user)
+		}
+		t.Log(`TestBindMultipartForm`)
+	})
+	defer func() {
+		client := http.Client{}
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		writer.WriteField("Name", "吴浩麟")
+		writer.WriteField("Age", "23")
+		writer.WriteField("Money", "123.456")
+		writer.WriteField("Alive", "true")
+		writer.Close()
+		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
+	}()
 }
 
 func TestBindQuery(t *testing.T) {
@@ -230,4 +272,133 @@ func TestAutoBind(t *testing.T) {
 	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 	bs, _ = xml.Marshal(user)
 	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
+}
+
+func TestUpdateFile(t *testing.T) {
+	po, baseURL := runPong()
+	root := po.Root
+	filePath := "test_resource/html/index.html"
+	root.Post("/hi", func(c *Context) {
+		file, header, err := c.Request.File("file")
+		if err != nil {
+			t.Error(err)
+		}
+		bs, err := ioutil.ReadAll(file)
+		if err != nil {
+			t.Error(err)
+		}
+		fileStr := string(bs)
+		if header.Filename != filePath {
+			t.Error(header.Filename)
+		}
+		if fileStr != "<h1>index.html</h1><b>{{.}}</b>" {
+			t.Error(fileStr)
+		}
+		t.Log(`TestUpdateFile`)
+	})
+	defer func() {
+		file, _ := os.Open(filePath)
+		client := http.Client{}
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		filePart, _ := writer.CreateFormFile("file", filePath)
+		io.Copy(filePart, file)
+		writer.Close()
+		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
+	}()
+}
+
+func TestBindContentTypeNotSupport(t *testing.T) {
+	po, baseURL := runPong()
+	root := po.Root
+	root.Post("/hi", func(c *Context) {
+		user := &testUser{}
+		err := c.Request.BindForm(user)
+		if err != ErrorTypeNotSupport {
+			t.Error(err)
+		}
+		err = c.Request.AutoBind(user)
+		if err != ErrorTypeNotSupport {
+			t.Error(err)
+		}
+		t.Log(`TestBindContentTypeNotSupport`)
+	})
+	defer func() {
+		file, _ := os.Open("test_resource/html/index.html")
+		_, err := http.Post(baseURL + "/hi", "ContentTypeNotSupport", file)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+}
+
+type fullType struct {
+	Int        int
+	Int8       int8
+	Int16      int16
+	Int32      int32
+	Int64      int64
+	Uint       uint
+	Uint8      uint8
+	Uint16     uint16
+	Uint32     uint32
+	Uint64     uint64
+	Bool       bool
+	Float32    float32
+	Float64    float64
+	String     string
+	Slice      []string
+	BoolSlice  []bool
+	HandleFunc HandleFunc
+}
+
+func TestBind(t *testing.T) {
+	po, baseURL := runPong()
+	root := po.Root
+	full := fullType{
+		Int:123,
+		Bool:false,
+		Slice:[]string{"1", "a", "中文"},
+		Uint8:12,
+		Float32:12.34,
+	}
+	root.Post("/hi", func(c *Context) {
+		bindFull := fullType{}
+		err := c.Request.BindForm(&bindFull)
+		if err != nil {
+			t.Error(err)
+		}
+		if !reflect.DeepEqual(bindFull, full) {
+			t.Error(bindFull, full)
+		}
+		t.Log(`TestBind`)
+	})
+	defer http.PostForm(baseURL + "/hi", url.Values{
+		"Int":[]string{"123"},
+		"Int8":[]string{""},
+		"Int16":[]string{""},
+		"Int32":[]string{""},
+		"Int64":[]string{""},
+		"Uint":[]string{""},
+		"Uint8":[]string{"12"},
+		"Uint16":[]string{""},
+		"Uint32":[]string{""},
+		"Uint64":[]string{""},
+		"Bool":[]string{""},
+		"Float32":[]string{"12.34"},
+		"Float64":[]string{""},
+		"String":[]string{""},
+		"Slice":[]string{"1", "a", "中文"},
+	})
+	root.Post("/err", func(c *Context) {
+		bindFull := fullType{}
+		err := c.Request.BindForm(&bindFull)
+		if err == nil {
+			t.Error("should be err")
+		}
+		t.Log(`TestBind`)
+	})
+	defer http.PostForm(baseURL + "/err", url.Values{
+		"Bool":[]string{"abc"},
+	})
 }

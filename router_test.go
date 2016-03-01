@@ -5,35 +5,8 @@ import (
 	"net/http"
 	"io/ioutil"
 	"strings"
-	"fmt"
-	"strconv"
+	"net/url"
 )
-
-const (
-	notFindString = "404 page not found\n"
-)
-
-var (
-	listenPort int = 3000
-)
-
-func runPong() (pong *Pong, baseURL string) {
-	pong = New()
-	pong.Root.Middleware(func(c *Context) {
-		req := c.Request.HTTPRequest
-		fmt.Println(req.Method, req.Host, req.RequestURI)
-	})
-	serverHasRun := make(chan bool)
-	go func() {
-		listenAddr := "127.0.0.1:" + strconv.Itoa(listenPort)
-		baseURL = "http://" + listenAddr
-		serverHasRun <- true
-		http.ListenAndServe(listenAddr, pong)
-	}()
-	<-serverHasRun
-	listenPort++
-	return
-}
 
 func TestRouter(t *testing.T) {
 	po, baseURL := runPong()
@@ -174,5 +147,108 @@ func TestRouter(t *testing.T) {
 	defer httpPostAssert("/sub/sub2/user/any", applicationForm, "", "/sub/sub2/user/any")
 }
 
+func TestHead(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Head("/", func(c *Context) {
+		t.Log(`TestDelete`)
+	})
+	defer func() {
+		_, err := http.Head(baseURL)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+}
 
+func TestDelete(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Delete("/", func(c *Context) {
+		t.Log(`TestDelete`)
+	})
+	defer func() {
+		client := http.Client{}
+		url, _ := url.Parse(baseURL)
+		_, err := client.Do(&http.Request{
+			Method:http.MethodDelete,
+			URL:url,
+		})
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+}
+
+func TestOptions(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Options("/", func(c *Context) {
+		t.Log(`TestOptions`)
+	})
+	defer func() {
+		client := http.Client{}
+		url, _ := url.Parse(baseURL)
+		client.Do(&http.Request{
+			Method:http.MethodOptions,
+			URL:url,
+		})
+	}()
+}
+
+func TestPatch(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Patch("/", func(c *Context) {
+		t.Log(`TestPatch`)
+	})
+	defer func() {
+		client := http.Client{}
+		url, _ := url.Parse(baseURL)
+		client.Do(&http.Request{
+			Method:http.MethodPatch,
+			URL:url,
+		})
+	}()
+}
+
+func TestPut(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Put("/", func(c *Context) {
+		t.Log(`TestPut`)
+	})
+	defer func() {
+		client := http.Client{}
+		url, _ := url.Parse(baseURL)
+		client.Do(&http.Request{
+			Method:http.MethodPut,
+			URL:url,
+		})
+	}()
+}
+
+func TestTrace(t *testing.T) {
+	po, baseURL := runPong()
+	po.Root.Trace("/", func(c *Context) {
+		t.Log(`TestTrace`)
+	})
+	defer func() {
+		client := http.Client{}
+		url, _ := url.Parse(baseURL)
+		client.Do(&http.Request{
+			Method:http.MethodTrace,
+			URL:url,
+		})
+	}()
+}
+
+func TestRouterConflict(t *testing.T) {
+	po, _ := runPong()
+	root := po.Root
+	root.Router("/a")
+	root.Router("/a/:b")
+	root.Router("/a/:b/c")
+	root.Router("/a/:b/c")
+	root.Router("/:a/")
+	root.Get("/:a", po.NotFindHandle)
+	root.Get("/hi", po.NotFindHandle)
+	root.Get("/hi", po.NotFindHandle)
+	root.Get("/:b", po.NotFindHandle)
+}
 
