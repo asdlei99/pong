@@ -49,10 +49,7 @@ func (res *Response)sendData(contentType string, bs []byte) {
 		handle(res.context)
 	}
 	res.HTTPResponseWriter.WriteHeader(res.StatusCode)
-	_, err := res.HTTPResponseWriter.Write(bs)
-	if err != nil {
-		res.context.pong.HTTPErrorHandle(err, res.context)
-	}
+	res.HTTPResponseWriter.Write(bs)
 }
 
 func (res *Response)JSON(data interface{}) {
@@ -106,7 +103,8 @@ func (res *Response)Render(template string, data interface{}) {
 			res.sendData(textHTMLCharsetUTF8, html.Bytes())
 		}
 	}else {
-		panic("LoadTemplateGlob before use Render")
+		res.context.pong.Logger.Println("LoadTemplateGlob before use Render")
+		res.context.pong.NotFindHandle(res.context)
 	}
 }
 

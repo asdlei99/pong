@@ -24,9 +24,7 @@ type testNote struct {
 }
 
 func TestParam(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
-	po.Root.Middleware(logRequest)
+	po, baseURL := runPong()
 	root := po.Root
 	root.Get("/user/:id/update/:data", func(c *Context) {
 		if c.Request.Param("id") != "123" {
@@ -35,6 +33,7 @@ func TestParam(t *testing.T) {
 		if c.Request.Param("data") != "更新" {
 			t.Error()
 		}
+		t.Log(`TestParam`)
 	})
 	defer http.Get(baseURL + "/user/123/update/更新")
 	root.Post("/user/:id/update/:data", func(c *Context) {
@@ -44,29 +43,27 @@ func TestParam(t *testing.T) {
 		if c.Request.Param("data") != "更新" {
 			t.Error()
 		}
+		t.Log(`TestParam`)
 	})
 	defer http.Post(baseURL + "/user/123/update/更新", textPlainCharsetUTF8, strings.NewReader(""))
 }
 
 func TestQuery(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	root.Get("/hi", func(c *Context) {
 		id := c.Request.Query("id")
 		if id != "吴浩麟" {
 			t.Error(id)
 		}
+		t.Log(`TestQuery`)
 	})
 	defer http.Get(baseURL + "/hi?id=吴浩麟")
 }
 
 func TestForm(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	small := "吴浩麟"
 	big := ""
 	for i := 0; i < 10000; i++ {
@@ -77,12 +74,14 @@ func TestForm(t *testing.T) {
 		if data != small {
 			t.Error(data)
 		}
+		t.Log(`TestForm`)
 	})
 	root.Post("/big", func(c *Context) {
 		data := c.Request.Form("data")
 		if data != big {
 			t.Error(data)
 		}
+		t.Log(`TestForm`)
 	})
 	defer http.PostForm(baseURL + "/small", url.Values{
 		"data":[]string{small},
@@ -93,10 +92,8 @@ func TestForm(t *testing.T) {
 }
 
 func TestBindJSON(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -113,16 +110,15 @@ func TestBindJSON(t *testing.T) {
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
 		}
+		t.Log(`TestBindJSON`)
 	})
 	bs, _ := json.Marshal(user)
 	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindXML(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -139,16 +135,15 @@ func TestBindXML(t *testing.T) {
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
 		}
+		t.Log(`TestBindXML root.Post("/hi")`)
 	})
 	bs, _ := xml.Marshal(user)
 	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindForm(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -165,6 +160,7 @@ func TestBindForm(t *testing.T) {
 		if err == nil {
 			t.Error("should return err")
 		}
+		t.Log(`TestBindForm root.Post("/hi")`)
 	})
 	defer http.PostForm(baseURL + "/hi", url.Values{
 		"Name":[]string{"吴浩麟"},
@@ -175,10 +171,8 @@ func TestBindForm(t *testing.T) {
 }
 
 func TestBindQuery(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -198,15 +192,14 @@ func TestBindQuery(t *testing.T) {
 		if err == nil {
 			t.Error("should return err")
 		}
+		t.Log(`TestBindQuery root.Get("/hi")`)
 	})
 	defer http.Get(baseURL + "/hi?Name=吴浩麟&Age=23&Money=123.456")
 }
 
 func TestAutoBind(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -226,6 +219,7 @@ func TestAutoBind(t *testing.T) {
 		if err == nil {
 			t.Error("should return err")
 		}
+		t.Log(`TestAutoBind`)
 	})
 	defer http.PostForm(baseURL + "/hi", url.Values{
 		"Name":[]string{"吴浩麟"},

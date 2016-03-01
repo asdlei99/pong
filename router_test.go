@@ -6,22 +6,37 @@ import (
 	"io/ioutil"
 	"strings"
 	"fmt"
+	"strconv"
 )
 
 const (
 	notFindString = "404 page not found\n"
-	listenAddr = "127.0.0.1:3000"
-	baseURL = "http://127.0.0.1:3000"
 )
 
-func logRequest(c *Context) {
-	req := c.Request.HTTPRequest
-	fmt.Println(req.Method, req.RequestURI)
+var (
+	listenPort int = 3000
+)
+
+func runPong() (pong *Pong, baseURL string) {
+	pong = New()
+	pong.Root.Middleware(func(c *Context) {
+		req := c.Request.HTTPRequest
+		fmt.Println(req.Method, req.Host, req.RequestURI)
+	})
+	serverHasRun := make(chan bool)
+	go func() {
+		listenAddr := "127.0.0.1:" + strconv.Itoa(listenPort)
+		baseURL = "http://" + listenAddr
+		serverHasRun <- true
+		http.ListenAndServe(listenAddr, pong)
+	}()
+	<-serverHasRun
+	listenPort++
+	return
 }
 
-func TestServe(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+func TestRouter(t *testing.T) {
+	po, baseURL := runPong()
 	httpGetAssert := func(path string, responseStr string) {
 		res, err := http.Get(baseURL + path)
 		if err != nil {
@@ -35,6 +50,7 @@ func TestServe(t *testing.T) {
 		if result != responseStr {
 			t.Error(result, responseStr)
 		}
+		t.Log(`TestRouter`)
 	}
 	httpPostAssert := func(path string, contentType, bodyStr string, responseStr string) {
 		res, err := http.Post(baseURL + path, contentType, strings.NewReader(responseStr))
@@ -49,10 +65,10 @@ func TestServe(t *testing.T) {
 		if result != responseStr {
 			t.Error(result, responseStr)
 		}
+		t.Log(`TestRouter`)
 	}
 
 	root := po.Root
-	root.Middleware(logRequest)
 	root.Get("", func(c *Context) {
 		c.Response.String("")
 	})

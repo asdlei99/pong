@@ -7,16 +7,15 @@ import (
 	"encoding/json"
 	"reflect"
 	"encoding/xml"
+	"strings"
 )
 
 func TestHeader(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	root.Get("/hi", func(c *Context) {
 		c.Response.Header("X-name", "mine header")
-		c.Response.String("")
+		c.Response.String("TestHeader")
 	})
 	defer func() {
 		res, err := http.Get(baseURL + "/hi")
@@ -27,14 +26,13 @@ func TestHeader(t *testing.T) {
 		if header != "mine header" {
 			t.Error(header)
 		}
+		t.Log(`TestHeader`)
 	}()
 }
 
 func TestCookie(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	root.Get("/hi", func(c *Context) {
 		c.Response.Cookie(&http.Cookie{Name:"id", Value:"123"})
 		c.Response.String("")
@@ -49,14 +47,13 @@ func TestCookie(t *testing.T) {
 				t.Error(cookies)
 			}
 		}
+		t.Log(`TestCookie`)
 	}()
 }
 
 func TestJSON(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -76,7 +73,7 @@ func TestJSON(t *testing.T) {
 			t.Error(err)
 		}else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			real_bs, _ := json.Marshal(user)
 			if !reflect.DeepEqual(res_bs, real_bs) {
 				t.Error(string(res_bs))
@@ -85,15 +82,14 @@ func TestJSON(t *testing.T) {
 			if ct != applicationJSONCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestJSON`)
 		}
 	}()
 }
 
 func TestJSONP(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -115,7 +111,7 @@ func TestJSONP(t *testing.T) {
 		}else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
 			res_str := string(res_bs)
-			defer res.Body.Close()
+			res.Body.Close()
 			real_bs, _ := json.Marshal(user)
 			real_str := string(real_bs)
 			if res_str != ("hello(" + real_str + ")") {
@@ -125,15 +121,14 @@ func TestJSONP(t *testing.T) {
 			if ct != applicationJavaScriptCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestJSONP`)
 		}
 	}()
 }
 
 func TestXML(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	user := testUser{
 		Name:"吴浩麟",
 		Age:23,
@@ -153,7 +148,7 @@ func TestXML(t *testing.T) {
 			t.Error(err)
 		}else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			real_bs, _ := xml.Marshal(user)
 			if !reflect.DeepEqual(res_bs, real_bs) {
 				t.Error(string(res_bs))
@@ -162,15 +157,14 @@ func TestXML(t *testing.T) {
 			if ct != applicationXMLCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestXML`)
 		}
 	}()
 }
 
 func TestFile(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	root.Get("/file", func(c *Context) {
 		c.Response.File("test_resource/html/index.html")
 	})
@@ -180,22 +174,21 @@ func TestFile(t *testing.T) {
 			t.Error(err)
 		}else {
 			bs, err := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			if err == nil {
 				str := string(bs)
 				if str != "<h1>index.html</h1><b>{{.}}</b>" {
 					t.Error(str)
 				}
 			}
+			t.Log(`TestFile`)
 		}
 	}()
 }
 
 func TestString(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	bodyStr := "hello,乓"
 	root.Get("/hi", func(c *Context) {
 		c.Response.String(bodyStr)
@@ -206,7 +199,7 @@ func TestString(t *testing.T) {
 			t.Error(err)
 		}else {
 			bs, err := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			if err == nil {
 				str := string(bs)
 				if str != bodyStr {
@@ -217,15 +210,14 @@ func TestString(t *testing.T) {
 					t.Error(ct)
 				}
 			}
+			t.Log(`TestString`)
 		}
 	}()
 }
 
 func TestHTML(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	bodyHTML := "<h1>hello,乓</>"
 	root.Get("/hi", func(c *Context) {
 		c.Response.HTML(bodyHTML)
@@ -236,7 +228,7 @@ func TestHTML(t *testing.T) {
 			t.Error(err)
 		}else {
 			bs, _ := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			html := string(bs)
 			if html != bodyHTML {
 				t.Error(html)
@@ -245,15 +237,14 @@ func TestHTML(t *testing.T) {
 			if ct != textHTMLCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestHTML`)
 		}
 	}()
 }
 
 func TestRender(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
+	po, baseURL := runPong()
 	root := po.Root
-	po.Root.Middleware(logRequest)
 	po.LoadTemplateGlob("test_resource/html/*.html")
 	root.Get("/render/:name", func(c *Context) {
 		name := c.Request.Param("name")
@@ -265,7 +256,7 @@ func TestRender(t *testing.T) {
 			t.Error(err)
 		}else {
 			bs, _ := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			html := string(bs)
 			if html != "<h1>index.html</h1><b>中文</b>" {
 				t.Error(html)
@@ -274,6 +265,7 @@ func TestRender(t *testing.T) {
 			if ct != textHTMLCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestRender`)
 		}
 	}()
 	defer func() {
@@ -282,7 +274,7 @@ func TestRender(t *testing.T) {
 			t.Error(err)
 		}else {
 			bs, _ := ioutil.ReadAll(res.Body)
-			defer res.Body.Close()
+			res.Body.Close()
 			html := string(bs)
 			if html != "<h1>footer.html</h1><b>中文</b>" {
 				t.Error(html)
@@ -291,7 +283,29 @@ func TestRender(t *testing.T) {
 			if ct != textHTMLCharsetUTF8 {
 				t.Error(ct)
 			}
+			t.Log(`TestRender`)
 		}
 	}()
-	go http.ListenAndServe(listenAddr, po)
+}
+
+func TestRedirect(t *testing.T) {
+	po, baseURL := runPong()
+	root := po.Root
+	root.Get("/redirect", func(c *Context) {
+		c.Response.Redirect("/")
+	})
+	defer func() {
+		res, err := http.Get(baseURL + "/redirect")
+		if err != nil {
+			t.Error(err)
+		}else {
+			bs, _ := ioutil.ReadAll(res.Body)
+			res.Body.Close()
+			html := string(bs)
+			if !strings.Contains(html, `a href="/"`) {
+				t.Error(html)
+			}
+			t.Log(`TestRedirect`)
+		}
+	}()
 }

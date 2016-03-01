@@ -46,9 +46,6 @@ func New() *Pong {
 			c.Response.StatusCode = http.StatusInternalServerError
 			c.Response.String(err.Error())
 		},
-		SessionManager:&memorySessionManager{
-			store:make(map[string]map[string]interface{}),
-		},
 	}
 	pong.Root = newRouter(pong)
 	return pong
@@ -63,50 +60,9 @@ func (pong *Pong)ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (pong *Pong)LoadTemplateGlob(path string) {
 	htmlTemplate, err := template.ParseGlob(path)
 	if err != nil {
-		log.Fatal(err)
+		pong.Logger.Println(err)
 	}
 	pong.htmlTemplate = htmlTemplate
-}
-
-func (pong *Pong)EnableSession() {
-	if pong.SessionManager == nil {
-		pong.SessionManager = &memorySessionManager{
-			store:make(map[string]map[string]interface{}),
-		}
-	}
-	pong.Root.Middleware(func(c *Context) {
-		c.Session = &Session{
-			pong:c.pong,
-		}
-		sCookie, err := c.Request.HTTPRequest.Cookie(SessionCookiesName)
-		if err == nil {
-			c.Session.id = sCookie.Value
-			if c.pong.SessionManager.Has(c.Session.id) {
-				v := c.pong.SessionManager.Read(c.Session.id)
-				c.Session.store = v
-			}else {
-				goto noSessionID
-			}
-		}else {
-
-		}
-		noSessionID:{
-			c.Session.id = c.pong.SessionManager.NewSession()
-			c.Response.Cookie(&http.Cookie{
-				HttpOnly:true,
-				Name:SessionCookiesName,
-				Value:c.Session.id,
-			})
-		}
-
-	})
-	pong.TailMiddleware(func(c *Context) {
-		change := make(map[string]interface{})
-		for _, name := range c.Session.hasChangeFlag {
-			change[name] = c.Session.store[name]
-		}
-		c.pong.SessionManager.Write(c.Session.id, change)
-	})
 }
 
 func (pong *Pong)TailMiddleware(middlewareList ...HandleFunc) {

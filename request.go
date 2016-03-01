@@ -86,11 +86,11 @@ func (req *Request)AutoBind(pointer interface{}) error {
 //TODO check
 func bind(pointer interface{}, m map[string][]string) error {
 	if pointer == nil {
-		panic("can't bind to nil")
+		return errors.New("can't bind to nil")
 	}
 	typ := reflect.TypeOf(pointer)
 	if typ.Kind() != reflect.Ptr {
-		panic("can only bind to pointer")
+		return errors.New("can only bind to pointer")
 	}
 	typ = typ.Elem()
 	val := reflect.ValueOf(pointer).Elem()

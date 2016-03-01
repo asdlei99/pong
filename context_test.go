@@ -7,9 +7,7 @@ import (
 )
 
 func TestContext(t *testing.T) {
-	po := New()
-	go http.ListenAndServe(listenAddr, po)
-	po.Root.Middleware(logRequest)
+	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
 		Name:"吴浩麟",
@@ -29,6 +27,7 @@ func TestContext(t *testing.T) {
 		if !reflect.DeepEqual(resUser, user) {
 			t.Error(resUser)
 		}
+		t.Log(`TestContext`)
 	})
 	defer http.Get(baseURL + "/user")
 }
