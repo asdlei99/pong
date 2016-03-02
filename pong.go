@@ -23,7 +23,7 @@ Example:
 
 	// visitor http://127.0.0.1:3000/sub/pong will see string "hello pong"
 	sub.Get("/:name", func(c *Context) {
-		c.Response.String("hello" + c.Request.Param("name"))
+		c.Response.String("hello " + c.Request.Param("name"))
 	})
 
 	// Run Server Listen on 127.0.0.1:3000
