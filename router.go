@@ -16,7 +16,6 @@ type Router struct {
 	middlewareList []HandleFunc
 	subRoutersMap  map[string]*Router
 	subHandlesMap  map[subHandlesMapKey]HandleFunc
-	indexHandleMap map[string]HandleFunc
 }
 
 func newRouter(pong *Pong) *Router {
@@ -24,18 +23,17 @@ func newRouter(pong *Pong) *Router {
 		pong:           pong,
 		subRoutersMap:  make(map[string]*Router),
 		subHandlesMap:  make(map[subHandlesMapKey]HandleFunc),
-		indexHandleMap: make(map[string]HandleFunc),
 	}
 }
 
 func (r *Router) registerRouter(steps []string) *Router {
 	parent, child := r, r
 	for _, step := range steps {
-		if step[0] == ':' {
+		if len(step) > 0 && step[0] == ':' {
 			child = parent.subRoutersMap[":"]
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
-					fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
+					fmt.Errorf("(%s) conflict (%s)\n", step, k + parent.paramName)
 				}
 				child = newRouter(parent.pong)
 				parent.paramName = step[1:]
@@ -46,7 +44,7 @@ func (r *Router) registerRouter(steps []string) *Router {
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
 					if k == step || k == ":" {
-						fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
+						fmt.Errorf("(%s) conflict (%s)\n", step, k + parent.paramName)
 					}
 				}
 				child = newRouter(parent.pong)
@@ -59,10 +57,10 @@ func (r *Router) registerRouter(steps []string) *Router {
 }
 
 func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
-	if step[0] == ':' {
+	if len(step) > 0 && step[0] == ':' {
 		for k, _ := range r.subHandlesMap {
 			if k.method == method && k.path == ":" {
-				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path + r.paramName, k.method)
 			}
 		}
 		r.paramName = step[1:]
@@ -70,7 +68,7 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 	} else {
 		for k, _ := range r.subHandlesMap {
 			if (step == k.path && method == k.method) || k.path == ":" {
-				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path + r.paramName, k.method)
 			}
 		}
 		r.subHandlesMap[subHandlesMapKey{step, method}] = handle
@@ -80,12 +78,9 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 func (r *Router) register(path string, method string, handle HandleFunc) {
 	steps := splitPath(path)
 	stepsLength := len(steps)
-	switch stepsLength {
-	case 0:
-		r.indexHandleMap[method] = handle
-	case 1:
+	if stepsLength == 1 {
 		r.registerHandle(steps[0], method, handle)
-	default:
+	}else {
 		lastIndex := stepsLength - 1
 		router := r.registerRouter(steps[0:lastIndex])
 		lastStep := steps[lastIndex]
@@ -164,42 +159,34 @@ func (r *Router) handle(steps []string, context *Context) {
 		handle(context)
 	}
 	stepsLength := len(steps)
-	if stepsLength == 0 {
-		indexHandle := r.indexHandleMap[context.Request.HTTPRequest.Method]
-		if indexHandle != nil {
-			indexHandle(context)
+	nowStep := steps[0]
+	isParamStep := false
+	if len(r.paramName) > 0 {
+		context.Request.requestParamMap[r.paramName] = nowStep
+		isParamStep = true
+	}
+	if stepsLength == 1 {
+		handleKey := subHandlesMapKey{
+			path:   nowStep,
+			method: context.Request.HTTPRequest.Method,
+		}
+		handle := r.subHandlesMap[handleKey]
+		if handle == nil && isParamStep {
+			handleKey.path = ":"
+			handle = r.subHandlesMap[handleKey]
+		}
+		if handle != nil {
+			handle(context)
 			return
 		}
 	} else {
-		nowStep := steps[0]
-		isParamStep := false
-		if len(r.paramName) > 0 {
-			context.Request.requestParamMap[r.paramName] = nowStep
-			isParamStep = true
+		subRouter := r.subRoutersMap[nowStep]
+		if subRouter == nil && isParamStep {
+			subRouter = r.subRoutersMap[":"]
 		}
-		if stepsLength == 1 {
-			handleKey := subHandlesMapKey{
-				path:   nowStep,
-				method: context.Request.HTTPRequest.Method,
-			}
-			handle := r.subHandlesMap[handleKey]
-			if handle == nil && isParamStep {
-				handleKey.path = ":"
-				handle = r.subHandlesMap[handleKey]
-			}
-			if handle != nil {
-				handle(context)
-				return
-			}
-		} else {
-			subRouter := r.subRoutersMap[nowStep]
-			if subRouter == nil && isParamStep {
-				subRouter = r.subRoutersMap[":"]
-			}
-			if subRouter != nil {
-				subRouter.handle(steps[1:], context)
-				return
-			}
+		if subRouter != nil {
+			subRouter.handle(steps[1:], context)
+			return
 		}
 	}
 	context.pong.NotFindHandle(context) //404

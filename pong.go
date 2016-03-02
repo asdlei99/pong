@@ -78,11 +78,7 @@ type (
 
 func splitPath(path string) []string {
 	path = strings.Trim(path, "/")
-	if len(path) > 0 {
-		return strings.Split(path, "/")
-	} else {
-		return []string{}
-	}
+	return strings.Split(path, "/")
 }
 
 // make a pong instance and return is pointer.
