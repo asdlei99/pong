@@ -1,29 +1,74 @@
+/**
+pong is a simple HTTP router for go.
+
+Example:
+
+    package main
+
+    import (
+        "net/http"
+        "github.com/gwuhaolin/pong"
+    )
+
+    func main() {
+    	po := pong.New()
+
+    	// visitor http://127.0.0.1:3000/hi will see string "hi"
+    	po.Root.Get("/hi", func(c *Context) {
+		c.Response.String("/hi")
+	})
+
+	// a sub router
+	sub := po.Root.Router("/sub")
+
+	// visitor http://127.0.0.1:3000/sub/pong will see string "hello pong"
+	sub.Get("/:name", func(c *Context) {
+		c.Response.String("hello" + c.Request.Param("name"))
+	})
+
+	// Run Server Listen on 127.0.0.1:3000
+        http.ListenAndServe(":3000", po)
+    }
+
+Learn more at https://github.com/gwuhaolin/pong
+*/
 package pong
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 )
 
 var (
-	SessionCookiesName  = "SESSIONID"
+	// SessionId's Cookies name store in browser
+	SessionCookiesName = "SESSIONID"
+	// this error will be return when use bind in request when bind data to struct fail
 	ErrorTypeNotSupport = errors.New("type not support")
 )
 
 type (
+	// HandleFunc is a handle in Middleware list, like a machine production line to do some change
+	// used to read something from request and store by Context.Request
+	// make a response to client by Context.Response
 	HandleFunc func(*Context)
 	Pong       struct {
 		htmlTemplate       *template.Template
 		tailMiddlewareList []HandleFunc
-		Root               *Router
-		Logger             *log.Logger
-		NotFindHandle      HandleFunc
-		HTTPErrorHandle    func(error, *Context)
-		SessionManager     SessionManager
+		// Root router to path /
+		Root *Router
+		// 404 not find handle
+		// when pong's router can't find a handle to request' URL,pong will use NotFindHandle to handle this request
+		// default is response with code 404, and string page not find
+		NotFindHandle HandleFunc
+		// when send response to client cause error happen, pong will use HTTPErrorHandle to handle this request
+		// default is response with code 500, and string inter server error
+		HTTPErrorHandle func(error, *Context)
+		// SessionManager used to store and update value in session when pong has EnableSession
+		// default SessionManager store data in memory
+		SessionManager SessionManager
 	}
 )
 
@@ -39,7 +84,6 @@ func splitPath(path string) []string {
 // make a pong instance and return is pointer.
 func New() *Pong {
 	pong := &Pong{
-		Logger: log.New(os.Stdout, "Pong:", log.LstdFlags),
 		NotFindHandle: func(c *Context) {
 			http.NotFound(c.Response.HTTPResponseWriter, c.Request.HTTPRequest)
 		},
@@ -69,7 +113,7 @@ func (pong *Pong) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (pong *Pong) LoadTemplateGlob(path string) {
 	htmlTemplate, err := template.ParseGlob(path)
 	if err != nil {
-		pong.Logger.Println(err)
+		fmt.Errorf("pong:%v", err)
 	}
 	pong.htmlTemplate = htmlTemplate
 }

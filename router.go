@@ -1,6 +1,7 @@
 package pong
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -34,7 +35,7 @@ func (r *Router) registerRouter(steps []string) *Router {
 			child = parent.subRoutersMap[":"]
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
-					r.pong.Logger.Printf("(%s) conflict (%s)\n", step, k+parent.paramName)
+					fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
 				}
 				child = newRouter(parent.pong)
 				parent.paramName = step[1:]
@@ -45,7 +46,7 @@ func (r *Router) registerRouter(steps []string) *Router {
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
 					if k == step || k == ":" {
-						parent.pong.Logger.Printf("(%s) conflict (%s)\n", step, k+parent.paramName)
+						fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
 					}
 				}
 				child = newRouter(parent.pong)
@@ -61,7 +62,7 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 	if step[0] == ':' {
 		for k, _ := range r.subHandlesMap {
 			if k.method == method && k.path == ":" {
-				r.pong.Logger.Printf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
 			}
 		}
 		r.paramName = step[1:]
@@ -69,7 +70,7 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 	} else {
 		for k, _ := range r.subHandlesMap {
 			if (step == k.path && method == k.method) || k.path == ":" {
-				r.pong.Logger.Printf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
 			}
 		}
 		r.subHandlesMap[subHandlesMapKey{step, method}] = handle

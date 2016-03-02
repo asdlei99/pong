@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"net/http"
 )
 
@@ -147,7 +148,7 @@ func (res *Response) Render(template string, data interface{}) {
 			res.sendData(textHTMLCharsetUTF8, html.Bytes())
 		}
 	} else {
-		res.context.pong.Logger.Println("LoadTemplateGlob before use Render")
+		fmt.Errorf("pong:LoadTemplateGlob before use Render")
 		res.context.pong.NotFindHandle(res.context)
 	}
 }
