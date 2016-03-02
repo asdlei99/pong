@@ -4,26 +4,23 @@
 [![Coverage Status](https://coveralls.io/repos/github/gwuhaolin/pong/badge.svg?branch=master)](https://coveralls.io/github/gwuhaolin/pong?branch=master)
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/gwuhaolin/pong#SessionManager)
 
-A simple HTTP router for golang.
+A router for high performance web service write in golang.
 
 # Introduction
-Pong is just a http router library.
-It's work is to router a request to register handle then provide convenient function to get param from request and send response and also provide option **HTTP session** support.
+Pong is just a http router library, use it make high performance web service in minutes.
+It's work is to route a request to register handle then provide convenient function to get param from request and send response and also provide option **HTTP session** support.
 Pong process every request as a product in production line, use register **middleware** do some change to the product.This like the way in NodeJs's famous Express do.
-It's api is small and clear, **no dependency**,**show route conflict**, good performance.
+It has **no dependency** small and clear, support **route conflict tips**.
 
 # Performance
 
 # Hello World
 ```go
     package main
-
     import (
     	"github.com/gwuhaolin/pong"
     	"net/http"
-    	"log"
     )
-
     func main() {
     	po := pong.New()
 
@@ -44,13 +41,13 @@ It's api is small and clear, **no dependency**,**show route conflict**, good per
     	})
 
     	// Run Server Listen on 127.0.0.1:3000
-    	log.Println(http.ListenAndServe(":3000", po))
+    	http.ListenAndServe(":3000", po)
     }
 ```
 
 # Installation
 ```bash
-go get github.com/gwuhaolin/pong
+    go get github.com/gwuhaolin/pong
 ```
 
 # Principle
@@ -68,7 +65,7 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 		c.Response.String("hi")
 	})
 
-	log.Fatal(http.ListenAndServeTLS(":433", "cert.pem", "key.pem", nil))
+	http.ListenAndServeTLS(":433", "cert.pem", "key.pem", nil)
 ```
 ### HTTP2
 ```go
@@ -84,7 +81,7 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 		Addr:":3000",
 	}
 	http2.ConfigureServer(server, &http2.Server{})
-	log.Fatal(server.ListenAndServe())
+	server.ListenAndServe()
 ```
 ### Multi-Server
 ```go
@@ -101,9 +98,9 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 		c.Response.String("1")
 	})
 	go func() {
-		log.Fatal(http.ListenAndServe(":3000", po0))
+		http.ListenAndServe(":3000", po0)
 	}()
-	log.Fatal(http.ListenAndServe(":3001", po1))
+	http.ListenAndServe(":3001", po1)
 ```
 
 # Route
@@ -112,49 +109,77 @@ Pong will build a tree in type map when you register your handle to path, when s
 Pong's router not support regular expression because infrequency and avoid it can improve performance
 Pong support sub Router, a route like a tree which is comprise by one or more sub Router
 Pong's Root Router can access by pong.Root which point to root path /
+### HTTP Methods
+after route a request to path, pong can also route diff HTTP method. This `Delete` `Get` `Head` `Options` `Patch` `Post` `Put` `Trace` `Any` are support.
+```go
+    po.Root.Delete("/", func(c *Context) {
+		c.Response.String("Delete")
+	})
+    po.Root.Put("/", func(c *Context) {
+		c.Response.String("Put")
+	})
+    po.Root.Any("/", func(c *Context) {
+		c.Response.String("Any will overwrite all of them because is registed last, this means overwrite by registed order")
+	})
+```
 ### Sub Router
 ```go
-	// visit http://127.0.0.1:3000/ will see string "/"
+	// visit / will see string "/"
     po.Root.Get("/", func(c *Context) {
 		c.Response.String("/")
 	})
 	sub := po.Root.Router("sub")
-	// visit http://127.0.0.1:3000/sub/hi will see string "sub"
+	// visit /sub/hi will see string "sub"
 	sub.Get("/hi", func(c *Context) {
         c.Response.String("sub")
     })
     sub2 := sub.Router("sub")
-	// visit http://127.0.0.1:3000/sub/sub2/hi will see string "sub2"
+	// visit /sub/sub2/hi will see string "sub2"
 	sub2.Get("/hi", func(c *Context) {
         c.Response.String("sub2")
     })
 ```
 ### Path Param
 ```go
-	// visit http://127.0.0.1:3000/abc will see string "abc"
+	// visit /abc will see string "abc"
     po.Root.Get("/:param", func(c *Context) {
 		c.Response.String(c.Request.Param("param"))
 	})
 	// param in router path
 	sub := po.Root.Router("sub/:name")
-	// visit http://127.0.0.1:3000/sub/abc/hi will see string "abc"
+	// visit /sub/abc/hi will see string "abc"
 	sub.Get("/hi", func(c *Context) {
         c.Response.String(c.Request.Param("param"))
     })
 ```
 ### WebSocket
+TODO
+### Route Conflict Tips
+see Route Conflict this code:
+```go
+	po.Root.Get("/path", func(c *Context) {
+		c.Response.String("path")
+	})
+	po.Root.Get("/:name", func(c *Context) {
+		c.Response.String(c.Request.Param("name"))
+	})
+```
+`:name` march `/path`, when this happen pong will print warning to tell developer fix Conflict. But this code can still run, pong has rule you must know:
+**path's(/path) priority level is high than param's(/:name)**, so for this code when you visit:
+- `/path` will see string `path`, which use handle set in `po.Root.Get("/path",handle)`
+- `/hal` will see string `hal`, which use handle set in `po.Root.Get("/:name",handle)`
 
 # Request
 ### Query Param
 ```go
-	// visit http://127.0.0.1:3000?param=abc will see string "abc"
+	// visit /?param=abc will see string "abc"
     po.Root.Get("/", func(c *Context) {
 		c.Response.String(c.Request.Query("param"))
 	})
 ```
 ### Form Param
 ```go
-	// post http://127.0.0.1:3000 with body "param=abc" will see string "abc"
+	// post / with body "param=abc" will see string "abc"
     po.Root.Post("", func(c *Context) {
 		c.Response.String(c.Request.Form("param"))
 	})
