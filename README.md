@@ -15,7 +15,7 @@ It's api is small and clear, no dependency, good performance.
 # Performance
 
 # Hello World
-```
+```go
     package main
 
     import (
@@ -49,7 +49,7 @@ It's api is small and clear, no dependency, good performance.
 ```
 
 # Installation
-```
+```bash
 go get github.com/gwuhaolin/pong
 ```
 
@@ -58,9 +58,9 @@ go get github.com/gwuhaolin/pong
 # Catalogue
 
 # Listen and Server
-pong not do work about Listen and Server, it just route and handle, so you can should standard lib's function
+pong not provide Listen and Server, it just do thing about route and handle, so you can should standard lib's function
 ### HTTPS
-```
+```go
     po := pong.New()
 
 	// visitor https://127.0.0.1:3000/hi will see string "hi"
@@ -71,7 +71,7 @@ pong not do work about Listen and Server, it just route and handle, so you can s
 	log.Fatal(http.ListenAndServeTLS(":433", "cert.pem", "key.pem", nil))
 ```
 ### HTTP2
-```
+```go
     po := pong.New()
 
 	// visitor http://127.0.0.1:3000/hi will see string "hi"
@@ -87,7 +87,7 @@ pong not do work about Listen and Server, it just route and handle, so you can s
 	log.Fatal(server.ListenAndServe())
 ```
 ### Multi-Server
-```
+```go
     po0 := pong.New()
 	po1 := pong.New()
 
