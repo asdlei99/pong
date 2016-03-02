@@ -8,9 +8,9 @@ A simple HTTP router for golang.
 
 # Introduction
 Pong is just a http router library.
-It's work is to router a request to register handle then provide convenient function to get param from request and send response and also provide option HTTP session support.
-Pong process every request as a product in production line, use register middleware do some change to the product.This like the way in NodeJs's famous Express do.
-It's api is small and clear, no dependency, good performance.
+It's work is to router a request to register handle then provide convenient function to get param from request and send response and also provide option **HTTP session** support.
+Pong process every request as a product in production line, use register **middleware** do some change to the product.This like the way in NodeJs's famous Express do.
+It's api is small and clear, **no dependency**,**show route conflict**, good performance.
 
 # Performance
 
@@ -27,7 +27,7 @@ It's api is small and clear, no dependency, good performance.
     func main() {
     	po := pong.New()
 
-    	// visitor http://127.0.0.1:3000/ping will see string "pong"
+    	// visit http://127.0.0.1:3000/ping will see string "pong"
     	po.Root.Get("/ping", func(c *pong.Context) {
     		c.Response.String("pong")
     	})
@@ -35,7 +35,7 @@ It's api is small and clear, no dependency, good performance.
     	// a sub router
     	sub := po.Root.Router("/sub")
 
-    	// visitor http://127.0.0.1:3000/sub/pong will see JSON "{"name":"pong"}"
+    	// visit http://127.0.0.1:3000/sub/pong will see JSON "{"name":"pong"}"
     	sub.Get("/:name", func(c *pong.Context) {
     		m := map[string]string{
     			"name":c.Request.Param("name"),
@@ -63,7 +63,7 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 ```go
     po := pong.New()
 
-	// visitor https://127.0.0.1:3000/hi will see string "hi"
+	// visit https://127.0.0.1:3000/hi will see string "hi"
 	po.Root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("hi")
 	})
@@ -74,7 +74,7 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 ```go
     po := pong.New()
 
-	// visitor http://127.0.0.1:3000/hi will see string "hi"
+	// visit http://127.0.0.1:3000/hi will see string "hi"
 	po.Root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("hi")
 	})
@@ -91,12 +91,12 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
     po0 := pong.New()
 	po1 := pong.New()
 
-	// visitor https://127.0.0.1:3000/hi will see string "0"
+	// visit http://127.0.0.1:3000/hi will see string "0"
 	po0.Root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("0")
 	})
 
-	// visitor https://127.0.0.1:3001/hi will see string "1"
+	// visit http://127.0.0.1:3001/hi will see string "1"
 	po1.Root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("1")
 	})
@@ -107,14 +107,58 @@ pong not provide Listen and Server, it just do thing about route and handle, so 
 ```
 
 # Route
-### Path Param
+Route every request to the right handle is pong's job.
+Pong will build a tree in type map when you register your handle to path, when server has run and request come in, pong will use map's hash algorithm to find a register handle.
+Pong's router not support regular expression because infrequency and avoid it can improve performance
+Pong support sub Router, a route like a tree which is comprise by one or more sub Router
+Pong's Root Router can access by pong.Root which point to root path /
 ### Sub Router
+```go
+	// visit http://127.0.0.1:3000/ will see string "/"
+    po.Root.Get("/", func(c *Context) {
+		c.Response.String("/")
+	})
+	sub := po.Root.Router("sub")
+	// visit http://127.0.0.1:3000/sub/hi will see string "sub"
+	sub.Get("/hi", func(c *Context) {
+        c.Response.String("sub")
+    })
+    sub2 := sub.Router("sub")
+	// visit http://127.0.0.1:3000/sub/sub2/hi will see string "sub2"
+	sub2.Get("/hi", func(c *Context) {
+        c.Response.String("sub2")
+    })
+```
+### Path Param
+```go
+	// visit http://127.0.0.1:3000/abc will see string "abc"
+    po.Root.Get("/:param", func(c *Context) {
+		c.Response.String(c.Request.Param("param"))
+	})
+	// param in router path
+	sub := po.Root.Router("sub/:name")
+	// visit http://127.0.0.1:3000/sub/abc/hi will see string "abc"
+	sub.Get("/hi", func(c *Context) {
+        c.Response.String(c.Request.Param("param"))
+    })
+```
 ### WebSocket
 
 # Request
-### Path Param
 ### Query Param
+```go
+	// visit http://127.0.0.1:3000?param=abc will see string "abc"
+    po.Root.Get("/", func(c *Context) {
+		c.Response.String(c.Request.Query("param"))
+	})
+```
 ### Form Param
+```go
+	// post http://127.0.0.1:3000 with body "param=abc" will see string "abc"
+    po.Root.Post("", func(c *Context) {
+		c.Response.String(c.Request.Form("param"))
+	})
+```
 ### Post File
 ### Bind
 ### BindJSON
