@@ -1,68 +1,113 @@
 package pong
 
 import (
-	"net/http"
-	"strings"
 	"encoding/json"
 	"encoding/xml"
-	"reflect"
 	"errors"
-	"strconv"
 	"io/ioutil"
 	"mime/multipart"
+	"net/http"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
+// A Request represents an HTTP request received by a server or to be sent by a client.
+// Request has some convenient method to get params form client
 type Request struct {
 	requestParamMap map[string]string
-	HTTPRequest     *http.Request
+	//point to http.Request in golang's standard lib
+	HTTPRequest *http.Request
 }
 
-func (req *Request)Param(name string) string {
+// get Path param in request URL
+//
+// for example:
+//	register router is
+//		router.get("/user/:id",handle)
+//	the request URL is
+//		/user/123
+//	request.Param("id") == "123"
+// If key is not present, returns the empty string.
+func (req *Request) Param(name string) string {
 	return req.requestParamMap[name]
 }
 
-func (req *Request)Query(name string) string {
+// get Query param in request URL
+//
+// for example:
+//	the request URL is
+//		/user?name=hal
+//	request.Query("name") == "hal"
+// If key is not present, returns the empty string.
+func (req *Request) Query(name string) string {
 	return req.HTTPRequest.URL.Query().Get(name)
 }
 
-func (req *Request)Form(name string) string {
+// get Form param form request's body
+//
+// returns the first value for the named component of the POST
+// or PUT request body. URL query parameters are ignored.
+// support both application/x-www-form-urlencoded and multipart/form-data
+//
+// If key is not present, returns the empty string.
+func (req *Request) Form(name string) string {
 	return req.HTTPRequest.PostFormValue(name)
 }
 
-func (req *Request)File(name string) (multipart.File, *multipart.FileHeader, error) {
+// returns the first file for the provided form key.
+func (req *Request) File(name string) (multipart.File, *multipart.FileHeader, error) {
 	return req.HTTPRequest.FormFile(name)
 }
 
-func (req *Request)BindJSON(pointer interface{}) error {
+// parse request's body data as JSON and use standard lib json.Unmarshal to bind data to struct
+//
+// an error will return if json.Unmarshal return error
+func (req *Request) BindJSON(pointer interface{}) error {
 	bs, _ := ioutil.ReadAll(req.HTTPRequest.Body)
 	return json.Unmarshal(bs, pointer)
 }
 
-func (req *Request)BindXML(pointer interface{}) error {
+// parse request's body data as XML and use standard lib XML.Unmarshal to bind data to struct
+//
+// an error will return if xml.Unmarshal return error
+func (req *Request) BindXML(pointer interface{}) error {
 	bs, _ := ioutil.ReadAll(req.HTTPRequest.Body)
 	return xml.Unmarshal(bs, pointer)
 }
 
-func (req *Request)BindForm(pointer interface{}) error {
+// parse request's body post form as map and bind data to struct use filed name
+//
+// an error will return if the struct filed type is not support
+func (req *Request) BindForm(pointer interface{}) error {
 	ct := req.HTTPRequest.Header.Get(httpHeaderContentType)
 	switch {
 	case strings.HasPrefix(ct, applicationForm):
 		req.HTTPRequest.ParseForm()
 		return bind(pointer, req.HTTPRequest.Form)
 	case strings.HasPrefix(ct, multipartForm):
-		req.HTTPRequest.ParseMultipartForm(32 << 20)//32 MB
+		req.HTTPRequest.ParseMultipartForm(32 << 20) //32 MB
 		return bind(pointer, req.HTTPRequest.Form)
 	default:
 		return ErrorTypeNotSupport
 	}
 }
 
-func (req *Request)BindQuery(pointer interface{}) error {
+// parse request's query params as map and bind data to struct use filed name
+//
+// an error will return if the struct filed type is not support
+func (req *Request) BindQuery(pointer interface{}) error {
 	m := req.HTTPRequest.URL.Query()
 	return bind(pointer, m)
 }
 
-func (req *Request)AutoBind(pointer interface{}) error {
+// auto bind will look request's http Header ContentType
+//
+// if request ContentType is applicationJSON will use BindJSON to parse
+// if request ContentType is applicationXML will use BindXML to parse
+// if request ContentType is applicationForm or multipartForm will use BindForm to parse
+// else will return an ErrorTypeNotSupport error
+func (req *Request) AutoBind(pointer interface{}) error {
 	ct := req.HTTPRequest.Header.Get(httpHeaderContentType)
 	switch {
 	case strings.HasPrefix(ct, applicationJSON):
@@ -73,8 +118,8 @@ func (req *Request)AutoBind(pointer interface{}) error {
 		req.HTTPRequest.ParseForm()
 		return bind(pointer, req.HTTPRequest.Form)
 	case strings.HasPrefix(ct, multipartForm):
-		req.HTTPRequest.ParseMultipartForm(32 << 20)//32 MB
-		return bind(pointer, req.HTTPRequest.Form)
+		req.HTTPRequest.ParseMultipartForm(32 << 20) //32 MB
+		return bind(pointer, req.HTTPRequest.PostForm)
 	default:
 		return ErrorTypeNotSupport
 	}

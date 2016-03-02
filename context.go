@@ -2,40 +2,44 @@ package pong
 
 import "net/http"
 
-// Incoming requests to a server will create a Context
-// Context can be use to:
-// 	get HTTP request param query...
-// 	send HTTP response like JSON JSONP XML HTML file ...
+// Context represents context for the current request. It holds request and
+// response objects, path parameters, data and registered handler.
 // Context is handle by middleware list in order
 type Context struct {
 	pong      *Pong
 	dataStore map[string]interface{}
-	//
-	Session   *Session
-	Request   *Request
-	Response  *Response
+	//HTTP Session
+	Session *Session
+	//HTTP Request,used to get params like query post-form post-file...
+	Request *Request
+	//HTTP Response,used to send response to client.Can send JSON XML string file...
+	Response *Response
 }
 
-func newContext(pong *Pong, writer http.ResponseWriter, request  *http.Request) *Context {
+func newContext(pong *Pong, writer http.ResponseWriter, request *http.Request) *Context {
 	context := &Context{
-		pong:pong,
-		dataStore:make(map[string]interface{}),
-		Request:&Request{
-			HTTPRequest:request,
-			requestParamMap:make(map[string]string),
+		pong:      pong,
+		dataStore: make(map[string]interface{}),
+		Request: &Request{
+			HTTPRequest:     request,
+			requestParamMap: make(map[string]string),
 		},
-		Response:&Response{
-			HTTPResponseWriter:writer,
-			StatusCode:http.StatusOK,
+		Response: &Response{
+			HTTPResponseWriter: writer,
+			StatusCode:         http.StatusOK,
 		}}
 	context.Response.context = context
 	return context
 }
 
-func (c *Context)Get(name string) interface{} {
+//get a value which is set by Context.Set() method.
+//if the give name is not store a nil will return
+func (c *Context) Get(name string) interface{} {
 	return c.dataStore[name]
 }
 
-func (c *Context)Set(name string, value interface{}) {
+//set a value to this context in a handle,and in next handle you can read the value by Context.Get()
+//the data is store with type map[string]interface{} in memory,so set a same can overwrite old value
+func (c *Context) Set(name string, value interface{}) {
 	c.dataStore[name] = value
 }

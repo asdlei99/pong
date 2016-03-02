@@ -2,10 +2,10 @@ package pong
 
 import (
 	"net/http"
-	"testing"
 	"net/http/cookiejar"
 	"net/url"
 	"reflect"
+	"testing"
 )
 
 func TestNoSession(t *testing.T) {
@@ -19,7 +19,7 @@ func TestNoSession(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			cookies := res.Cookies()
 			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
 				t.Error(cookies)
@@ -34,13 +34,13 @@ func TestHasSession(t *testing.T) {
 	po.EnableSession()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Get("/hi", func(c *Context) {
@@ -52,12 +52,12 @@ func TestHasSession(t *testing.T) {
 	})
 	defer func() {
 		sid := po.SessionManager.NewSession()
-		po.SessionManager.Write(sid, map[string]interface{}{"user":user})
+		po.SessionManager.Write(sid, map[string]interface{}{"user": user})
 		jar, _ := cookiejar.New(nil)
 		url, _ := url.Parse(baseURL + "/hi")
-		jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name:SessionCookiesName, Value:sid}})
+		jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: SessionCookiesName, Value: sid}})
 		client := http.Client{
-			Jar:jar,
+			Jar: jar,
 		}
 		_, err := client.Get(url.String())
 		if err != nil {
@@ -85,7 +85,7 @@ func TestUpdateSessionValue(t *testing.T) {
 		res, err := client.Get(baseURL + "/initSession")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			cookies := res.Cookies()
 			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
 				t.Error(cookies)
@@ -102,7 +102,7 @@ func TestUpdateSessionValue(t *testing.T) {
 			_, err = client.Get(url.String())
 			if err != nil {
 				t.Error(err)
-			}else {
+			} else {
 				sValue := po.SessionManager.Read(sid)
 				if sValue["name"] != "halwu" || sValue["age"] != 100 {
 					t.Error(sValue)
@@ -131,7 +131,7 @@ func TestResetSessionValue(t *testing.T) {
 		res, err := client.Get(baseURL + "/initSession")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			cookies := res.Cookies()
 			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
 				t.Error(cookies)
@@ -144,7 +144,7 @@ func TestResetSessionValue(t *testing.T) {
 			res, err = client.Get(url.String())
 			if err != nil {
 				t.Error(err)
-			}else {
+			} else {
 				sid2 := res.Cookies()[0].Value
 				if sid2 == sid {
 					t.Error("sid should be diff")
@@ -180,7 +180,7 @@ func TestDestorySession(t *testing.T) {
 		res, err := client.Get(baseURL + "/initSession")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			cookies := res.Cookies()
 			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
 				t.Error(cookies)
@@ -193,12 +193,12 @@ func TestDestorySession(t *testing.T) {
 			res, err = client.Get(url.String())
 			if err != nil {
 				t.Error(err)
-			}else {
+			} else {
 				if po.SessionManager.Read(sid) != nil {
 					t.Error("old sid value in session store should nil")
 				}
 				removeCookieHeader := res.Header.Get("Set-Cookie")
-				if removeCookieHeader != SessionCookiesName + "=; Max-Age=0" {
+				if removeCookieHeader != SessionCookiesName+"=; Max-Age=0" {
 					t.Error(removeCookieHeader)
 				}
 			}
@@ -219,16 +219,16 @@ func TestCheaterSession(t *testing.T) {
 		res, err := client.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			jar, _ := cookiejar.New(nil)
 			url, _ := url.Parse(baseURL + "/hi")
 			cheaterSid := "cheaterSid-cheaterSid"
-			jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name:SessionCookiesName, Value:cheaterSid}})
+			jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: SessionCookiesName, Value: cheaterSid}})
 			client.Jar = jar
 			res, err = client.Get(url.String())
 			if err != nil {
 				t.Error(err)
-			}else {
+			} else {
 				cookies := res.Cookies()
 				if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
 					t.Error(cookies)

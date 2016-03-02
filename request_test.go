@@ -1,18 +1,18 @@
 package pong
 
 import (
-	"testing"
-	"net/http"
-	"strings"
-	"encoding/json"
 	"bytes"
-	"reflect"
+	"encoding/json"
 	"encoding/xml"
-	"net/url"
-	"mime/multipart"
-	"os"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"os"
+	"reflect"
+	"strings"
+	"testing"
 )
 
 type testUser struct {
@@ -49,7 +49,7 @@ func TestParam(t *testing.T) {
 		}
 		t.Log(`TestParam`)
 	})
-	defer http.Post(baseURL + "/user/123/update/更新", textPlainCharsetUTF8, strings.NewReader(""))
+	defer http.Post(baseURL+"/user/123/update/更新", textPlainCharsetUTF8, strings.NewReader(""))
 }
 
 func TestQuery(t *testing.T) {
@@ -87,11 +87,11 @@ func TestForm(t *testing.T) {
 		}
 		t.Log(`TestForm`)
 	})
-	defer http.PostForm(baseURL + "/small", url.Values{
-		"data":[]string{small},
+	defer http.PostForm(baseURL+"/small", url.Values{
+		"data": []string{small},
 	})
-	defer http.PostForm(baseURL + "/big", url.Values{
-		"data":[]string{big},
+	defer http.PostForm(baseURL+"/big", url.Values{
+		"data": []string{big},
 	})
 }
 
@@ -99,13 +99,13 @@ func TestBindJSON(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Post("/hi", func(c *Context) {
@@ -117,20 +117,20 @@ func TestBindJSON(t *testing.T) {
 		t.Log(`TestBindJSON`)
 	})
 	bs, _ := json.Marshal(user)
-	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL+"/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindXML(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:false,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: false,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Post("/hi", func(c *Context) {
@@ -142,17 +142,17 @@ func TestBindXML(t *testing.T) {
 		t.Log(`TestBindXML root.Post("/hi")`)
 	})
 	bs, _ := xml.Marshal(user)
-	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL+"/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindApplicationForm(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
 	}
 	root.Post("/hi", func(c *Context) {
 		bindUser := testUser{}
@@ -170,11 +170,11 @@ func TestBindApplicationForm(t *testing.T) {
 		}
 		t.Log(`TestBindForm root.Post("/hi")`)
 	})
-	defer http.PostForm(baseURL + "/hi", url.Values{
-		"Name":[]string{"吴浩麟"},
-		"Age":[]string{"23"},
-		"Money":[]string{"123.456"},
-		"Alive":[]string{"true"},
+	defer http.PostForm(baseURL+"/hi", url.Values{
+		"Name":  []string{"吴浩麟"},
+		"Age":   []string{"23"},
+		"Money": []string{"123.456"},
+		"Alive": []string{"true"},
 	})
 }
 
@@ -182,10 +182,10 @@ func TestBindMultipartForm(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
 	}
 	root.Post("/hi", func(c *Context) {
 		bindUser := testUser{}
@@ -208,7 +208,7 @@ func TestBindMultipartForm(t *testing.T) {
 		writer.WriteField("Money", "123.456")
 		writer.WriteField("Alive", "true")
 		writer.Close()
-		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
+		client.Post(baseURL+"/hi", writer.FormDataContentType(), body)
 	}()
 }
 
@@ -216,9 +216,9 @@ func TestBindQuery(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
 	}
 	root.Get("/hi", func(c *Context) {
 		bindUser := testUser{}
@@ -243,9 +243,9 @@ func TestAutoBind(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
 	}
 	root.Post("/hi", func(c *Context) {
 		bindUser := testUser{}
@@ -263,15 +263,15 @@ func TestAutoBind(t *testing.T) {
 		}
 		t.Log(`TestAutoBind`)
 	})
-	defer http.PostForm(baseURL + "/hi", url.Values{
-		"Name":[]string{"吴浩麟"},
-		"Age":[]string{"23"},
-		"Money":[]string{"123.456"},
+	defer http.PostForm(baseURL+"/hi", url.Values{
+		"Name":  []string{"吴浩麟"},
+		"Age":   []string{"23"},
+		"Money": []string{"123.456"},
 	})
 	bs, _ := json.Marshal(user)
-	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL+"/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 	bs, _ = xml.Marshal(user)
-	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL+"/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestUpdateFile(t *testing.T) {
@@ -304,7 +304,7 @@ func TestUpdateFile(t *testing.T) {
 		filePart, _ := writer.CreateFormFile("file", filePath)
 		io.Copy(filePart, file)
 		writer.Close()
-		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
+		client.Post(baseURL+"/hi", writer.FormDataContentType(), body)
 	}()
 }
 
@@ -325,7 +325,7 @@ func TestBindContentTypeNotSupport(t *testing.T) {
 	})
 	defer func() {
 		file, _ := os.Open("test_resource/html/index.html")
-		_, err := http.Post(baseURL + "/hi", "ContentTypeNotSupport", file)
+		_, err := http.Post(baseURL+"/hi", "ContentTypeNotSupport", file)
 		if err != nil {
 			t.Error(err)
 		}
@@ -356,11 +356,11 @@ func TestBind(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	full := fullType{
-		Int:123,
-		Bool:false,
-		Slice:[]string{"1", "a", "中文"},
-		Uint8:12,
-		Float32:12.34,
+		Int:     123,
+		Bool:    false,
+		Slice:   []string{"1", "a", "中文"},
+		Uint8:   12,
+		Float32: 12.34,
 	}
 	root.Post("/hi", func(c *Context) {
 		bindFull := fullType{}
@@ -373,22 +373,22 @@ func TestBind(t *testing.T) {
 		}
 		t.Log(`TestBind`)
 	})
-	defer http.PostForm(baseURL + "/hi", url.Values{
-		"Int":[]string{"123"},
-		"Int8":[]string{""},
-		"Int16":[]string{""},
-		"Int32":[]string{""},
-		"Int64":[]string{""},
-		"Uint":[]string{""},
-		"Uint8":[]string{"12"},
-		"Uint16":[]string{""},
-		"Uint32":[]string{""},
-		"Uint64":[]string{""},
-		"Bool":[]string{""},
-		"Float32":[]string{"12.34"},
-		"Float64":[]string{""},
-		"String":[]string{""},
-		"Slice":[]string{"1", "a", "中文"},
+	defer http.PostForm(baseURL+"/hi", url.Values{
+		"Int":     []string{"123"},
+		"Int8":    []string{""},
+		"Int16":   []string{""},
+		"Int32":   []string{""},
+		"Int64":   []string{""},
+		"Uint":    []string{""},
+		"Uint8":   []string{"12"},
+		"Uint16":  []string{""},
+		"Uint32":  []string{""},
+		"Uint64":  []string{""},
+		"Bool":    []string{""},
+		"Float32": []string{"12.34"},
+		"Float64": []string{""},
+		"String":  []string{""},
+		"Slice":   []string{"1", "a", "中文"},
 	})
 	root.Post("/err", func(c *Context) {
 		bindFull := fullType{}
@@ -398,7 +398,7 @@ func TestBind(t *testing.T) {
 		}
 		t.Log(`TestBind`)
 	})
-	defer http.PostForm(baseURL + "/err", url.Values{
-		"Bool":[]string{"abc"},
+	defer http.PostForm(baseURL+"/err", url.Values{
+		"Bool": []string{"abc"},
 	})
 }

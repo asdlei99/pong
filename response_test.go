@@ -1,13 +1,13 @@
 package pong
 
 import (
-	"testing"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
-	"reflect"
 	"encoding/xml"
+	"io/ioutil"
+	"net/http"
+	"reflect"
 	"strings"
+	"testing"
 )
 
 func TestHeader(t *testing.T) {
@@ -34,14 +34,14 @@ func TestCookie(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	root.Get("/hi", func(c *Context) {
-		c.Response.Cookie(&http.Cookie{Name:"id", Value:"123"})
+		c.Response.Cookie(&http.Cookie{Name: "id", Value: "123"})
 		c.Response.String("")
 	})
 	defer func() {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			cookies := res.Cookies()
 			if len(cookies) != 1 || cookies[0].Name != "id" || cookies[0].Value != "123" {
 				t.Error(cookies)
@@ -55,13 +55,13 @@ func TestJSON(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Get("/hi", func(c *Context) {
@@ -71,7 +71,7 @@ func TestJSON(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			real_bs, _ := json.Marshal(user)
@@ -91,13 +91,13 @@ func TestJSONP(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Get("/hi", func(c *Context) {
@@ -108,7 +108,7 @@ func TestJSONP(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi?CALLBACK=hello")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
 			res_str := string(res_bs)
 			res.Body.Close()
@@ -130,13 +130,13 @@ func TestXML(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Get("/hi", func(c *Context) {
@@ -146,7 +146,7 @@ func TestXML(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			res_bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			real_bs, _ := xml.Marshal(user)
@@ -172,7 +172,7 @@ func TestFile(t *testing.T) {
 		res, err := http.Get(baseURL + "/file")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, err := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			if err == nil {
@@ -197,7 +197,7 @@ func TestString(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, err := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			if err == nil {
@@ -226,7 +226,7 @@ func TestHTML(t *testing.T) {
 		res, err := http.Get(baseURL + "/hi")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			html := string(bs)
@@ -254,7 +254,7 @@ func TestRender(t *testing.T) {
 		res, err := http.Get(baseURL + "/render/index.html")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			html := string(bs)
@@ -272,7 +272,7 @@ func TestRender(t *testing.T) {
 		res, err := http.Get(baseURL + "/render/footer.html")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			html := string(bs)
@@ -298,7 +298,7 @@ func TestRedirect(t *testing.T) {
 		res, err := http.Get(baseURL + "/redirect")
 		if err != nil {
 			t.Error(err)
-		}else {
+		} else {
 			bs, _ := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			html := string(bs)

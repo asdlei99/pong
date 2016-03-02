@@ -2,21 +2,21 @@ package pong
 
 import (
 	"net/http"
-	"testing"
 	"reflect"
+	"testing"
 )
 
 func TestContext(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	user := testUser{
-		Name:"吴浩麟",
-		Age:23,
-		Money:123.456,
-		Alive:true,
-		Notes:[]testNote{
-			{Text:"明天去放风筝"},
-			{Text:"今天我们去逛宜家啦"},
+		Name:  "吴浩麟",
+		Age:   23,
+		Money: 123.456,
+		Alive: true,
+		Notes: []testNote{
+			{Text: "明天去放风筝"},
+			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Middleware(func(c *Context) {

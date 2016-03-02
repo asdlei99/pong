@@ -1,11 +1,11 @@
 package pong
 
 import (
-	"testing"
-	"net/http"
 	"io/ioutil"
-	"strings"
+	"net/http"
 	"net/url"
+	"strings"
+	"testing"
 )
 
 func TestRouter(t *testing.T) {
@@ -26,7 +26,7 @@ func TestRouter(t *testing.T) {
 		t.Log(`TestRouter`)
 	}
 	httpPostAssert := func(path string, contentType, bodyStr string, responseStr string) {
-		res, err := http.Post(baseURL + path, contentType, strings.NewReader(responseStr))
+		res, err := http.Post(baseURL+path, contentType, strings.NewReader(responseStr))
 		if err != nil {
 			t.Error(err)
 		}
@@ -169,8 +169,8 @@ func TestDelete(t *testing.T) {
 		client := http.Client{}
 		url, _ := url.Parse(baseURL)
 		_, err := client.Do(&http.Request{
-			Method:http.MethodDelete,
-			URL:url,
+			Method: http.MethodDelete,
+			URL:    url,
 		})
 		if err != nil {
 			t.Error(err)
@@ -187,8 +187,8 @@ func TestOptions(t *testing.T) {
 		client := http.Client{}
 		url, _ := url.Parse(baseURL)
 		client.Do(&http.Request{
-			Method:http.MethodOptions,
-			URL:url,
+			Method: http.MethodOptions,
+			URL:    url,
 		})
 	}()
 }
@@ -202,8 +202,8 @@ func TestPatch(t *testing.T) {
 		client := http.Client{}
 		url, _ := url.Parse(baseURL)
 		client.Do(&http.Request{
-			Method:http.MethodPatch,
-			URL:url,
+			Method: http.MethodPatch,
+			URL:    url,
 		})
 	}()
 }
@@ -217,8 +217,8 @@ func TestPut(t *testing.T) {
 		client := http.Client{}
 		url, _ := url.Parse(baseURL)
 		client.Do(&http.Request{
-			Method:http.MethodPut,
-			URL:url,
+			Method: http.MethodPut,
+			URL:    url,
 		})
 	}()
 }
@@ -232,8 +232,8 @@ func TestTrace(t *testing.T) {
 		client := http.Client{}
 		url, _ := url.Parse(baseURL)
 		client.Do(&http.Request{
-			Method:http.MethodTrace,
-			URL:url,
+			Method: http.MethodTrace,
+			URL:    url,
 		})
 	}()
 }
@@ -251,4 +251,3 @@ func TestRouterConflict(t *testing.T) {
 	root.Get("/hi", po.NotFindHandle)
 	root.Get("/:b", po.NotFindHandle)
 }
-

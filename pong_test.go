@@ -2,10 +2,10 @@ package pong
 
 import (
 	"fmt"
-	"strconv"
-	"net/http"
-	"testing"
 	"io/ioutil"
+	"net/http"
+	"strconv"
+	"testing"
 )
 
 const (
