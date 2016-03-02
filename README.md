@@ -184,7 +184,7 @@ Pong's Root Router can access by pong.Root which point to root path /
 ### Tail Middleware
 ### Log HTTP Request
 ### Log HTTP Request To MongoDB
-### Write Your's Middleware
+### Write Your Middleware
 
 # Session
 ### Set and Get
@@ -193,7 +193,8 @@ Pong's Root Router can access by pong.Root which point to root path /
 ### Store Session In Redis
 ### Store Session In MongoDB
 ### Store Session In SQL
-### Write Your's Session Manager
+### Write Your Session Manager
 
 # LICENSE
-The MIT License (MIT) Copyright (c) 2016 吴浩麟
+The MIT License (MIT)
+Copyright (c) 2016 吴浩麟
