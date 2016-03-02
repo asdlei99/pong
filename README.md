@@ -16,25 +16,36 @@ It's api is small and clear, no dependency, good performance.
 
 # Hello World
 ```
+    package main
+
+    import (
+    	"github.com/gwuhaolin/pong"
+    	"net/http"
+    	"log"
+    )
+
     func main() {
     	po := pong.New()
 
-    	// visitor http://127.0.0.1:3000/hi will see string "hi"
-    	po.Root.Get("/hi", func(c *Context) {
-		    c.Response.String("/hi")
-	    })
+    	// visitor http://127.0.0.1:3000/ping will see string "pong"
+    	po.Root.Get("/ping", func(c *pong.Context) {
+    		c.Response.String("pong")
+    	})
 
-	    // a sub router
-	    sub := po.Root.Router("/sub")
+    	// a sub router
+    	sub := po.Root.Router("/sub")
 
-	    // visitor http://127.0.0.1:3000/sub/pong will see string "hello pong"
-	    sub.Get("/:name", func(c *Context) {
-		    c.Response.String("hello " + c.Request.Param("name"))
-	    })
+    	// visitor http://127.0.0.1:3000/sub/pong will see JSON "{"name":"pong"}"
+    	sub.Get("/:name", func(c *pong.Context) {
+    		m := map[string]string{
+    			"name":c.Request.Param("name"),
+    		}
+    		c.Response.JSON(m)
+    	})
 
-	    // Run Server Listen on 127.0.0.1:3000
-        http.ListenAndServe(":3000", po)
-   }
+    	// Run Server Listen on 127.0.0.1:3000
+    	log.Println(http.ListenAndServe(":3000", po))
+    }
 ```
 
 # Installation
@@ -46,52 +57,99 @@ go get github.com/gwuhaolin/pong
 
 # Catalogue
 
-# Server
-## Listen Address
-## HTTPS
-## HTTP2
-## Multi-Server
+# Listen and Server
+pong not do work about Listen and Server, it just route and handle, so you can should standard lib's function
+### HTTPS
+```
+    po := pong.New()
+
+	// visitor https://127.0.0.1:3000/hi will see string "hi"
+	po.Root.Get("/hi", func(c *pong.Context) {
+		c.Response.String("hi")
+	})
+
+	log.Fatal(http.ListenAndServeTLS(":433", "cert.pem", "key.pem", nil))
+```
+### HTTP2
+```
+    po := pong.New()
+
+	// visitor http://127.0.0.1:3000/hi will see string "hi"
+	po.Root.Get("/hi", func(c *pong.Context) {
+		c.Response.String("hi")
+	})
+
+	server := &http.Server{
+		Handler:po,
+		Addr:":3000",
+	}
+	http2.ConfigureServer(server, &http2.Server{})
+	log.Fatal(server.ListenAndServe())
+```
+### Multi-Server
+```
+    po0 := pong.New()
+	po1 := pong.New()
+
+	// visitor https://127.0.0.1:3000/hi will see string "0"
+	po0.Root.Get("/hi", func(c *pong.Context) {
+		c.Response.String("0")
+	})
+
+	// visitor https://127.0.0.1:3001/hi will see string "1"
+	po1.Root.Get("/hi", func(c *pong.Context) {
+		c.Response.String("1")
+	})
+	go func() {
+		log.Fatal(http.ListenAndServe(":3000", po0))
+	}()
+	log.Fatal(http.ListenAndServe(":3001", po1))
+```
 
 # Route
-## Path Param
-## Sub Router
+### Path Param
+### Sub Router
+### WebSocket
 
 # Request
-## Path Param
-## Query Param
-## Form Param
-## Post File
-## Bind
-## BindJSON
-## BindXML
-## BindForm
-## BindForm
-## BindQuery
-## AutoBind
+### Path Param
+### Query Param
+### Form Param
+### Post File
+### Bind
+### BindJSON
+### BindXML
+### BindForm
+### BindForm
+### BindQuery
+### AutoBind
 
 # Response
-## Set Header
-## Set Cookie
-## Send JSON
-## Send JSONP
-## Send XML
-## Send File
-## Send String
-## Redirect
-## Render HTML Template
+### Set Header
+### Set Cookie
+### Send JSON
+### Send JSONP
+### Send XML
+### Send File
+### Send String
+### Redirect
+### Render HTML Template
 
 # Middleware
-## Router Middleware
-## Tail Middleware
-## Log HTTP Request
-## Log HTTP Request To MongoDB
-## Write Your's Middleware
+### Router Middleware
+### Tail Middleware
+### Log HTTP Request
+### Log HTTP Request To MongoDB
+### Write Your's Middleware
 
 # Session
-## Set and Get
-## Reset
-## Destory
-## Store Session In Redis
-## Store Session In MongoDB
-## Store Session In SQL
-## Write Your's Session Manager
+### Set and Get
+### Reset
+### Destory
+### Store Session In Redis
+### Store Session In MongoDB
+### Store Session In SQL
+### Write Your's Session Manager
+
+# LICENSE
+The MIT License (MIT) Copyright (c) 2016 吴浩麟
