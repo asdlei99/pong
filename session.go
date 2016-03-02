@@ -103,6 +103,10 @@ func (manager *memorySessionManager) Write(sessionId string, value map[string]in
 	manager.store[sessionId] = value
 }
 
+// if you want you HTTP session call this
+// EnableSession will use memory to store session data
+// EnableSession will read sessionId from request cookies value by name SessionCookiesName default is "SESSIONID" as sessionId
+// EnableSession will cause performance drop compare to not use Session
 func (pong *Pong) EnableSession() {
 	if pong.SessionManager == nil {
 		pong.SessionManager = &memorySessionManager{
@@ -126,7 +130,7 @@ func (pong *Pong) EnableSession() {
 			goto noSessionID
 		}
 		return
-	noSessionID:
+		noSessionID:
 		{
 			c.Session.id = c.pong.SessionManager.NewSession()
 			c.Response.Cookie(&http.Cookie{

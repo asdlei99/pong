@@ -1,4 +1,4 @@
-/**
+/*
 pong is a simple HTTP router for go.
 
 Example:
