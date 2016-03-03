@@ -1,4 +1,4 @@
-package session
+package memory_session
 
 import (
 	"net/http"
@@ -10,7 +10,6 @@ import (
 	"github.com/gwuhaolin/pong/_test"
 	"fmt"
 	"strconv"
-	"github.com/gwuhaolin/pong/session/memory_session"
 )
 
 func runPong() (po *pong.Pong, baseURL string) {
@@ -31,7 +30,7 @@ func runPong() (po *pong.Pong, baseURL string) {
 	return
 }
 
-var sessionManager = memory_session.New()
+var sessionManager = New()
 
 func TestNoSession(t *testing.T) {
 	po, baseURL := runPong()

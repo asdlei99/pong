@@ -6,7 +6,10 @@ go:
 install:
   - go get gopkg.in/redis.v3
   - go get github.com/mattn/goveralls
+  - go get github.com/modocache/gover
 
 script:
-  - go test -v ././... -covermode=count -coverprofile=coverage.out
-  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
+  - go test -v -coverprofile=pong.coverprofile
+  - go test -v -coverprofile=session.coverprofile ./session/memory_session
+  - $HOME/gopath/bin/gover
+  - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
