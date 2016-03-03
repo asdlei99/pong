@@ -153,8 +153,6 @@ after route a request to path, pong can also route diff HTTP method. This `Delet
         c.Response.String(c.Request.Param("param"))
     })
 ```
-### WebSocket
-TODO
 ### Route Conflict Tips
 see Route Conflict this code:
 ```go
@@ -194,7 +192,7 @@ see Route Conflict this code:
 		c.Response.String(string(bs))
 	})
 ```
-### Bind
+## Bind
 Pong provide convenient way to parse request's params and bind to a struct
 ### BindJSON
 parse request's body data as JSON and use standard lib json.Unmarshal to bind data to struct
