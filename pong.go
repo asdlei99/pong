@@ -47,32 +47,32 @@ import (
 )
 
 var (
-// SessionId's Cookies name store in browser
+	// SessionId's Cookies name store in browser
 	SessionCookiesName = "SESSIONID"
-// this error will be return when use bind in request when bind data to struct fail
+	// this error will be return when use bind in request when bind data to struct fail
 	ErrorTypeNotSupport = errors.New("type not support")
 )
 
 type (
-// HandleFunc is a handle in Middleware list, like a machine production line to do some change
-// used to read something from request and store by Context.Request
-// make a response to client by Context.Response
+	// HandleFunc is a handle in Middleware list, like a machine production line to do some change
+	// used to read something from request and store by Context.Request
+	// make a response to client by Context.Response
 	HandleFunc func(*Context)
 	Pong       struct {
 		htmlTemplate       *template.Template
 		tailMiddlewareList []HandleFunc
 		// Root router to path /
-		Root               *Router
+		Root *Router
 		// 404 not find handle
 		// when pong's router can't find a handle to request' URL,pong will use NotFindHandle to handle this request
 		// default is response with code 404, and string page not find
-		NotFindHandle      HandleFunc
+		NotFindHandle HandleFunc
 		// when send response to client cause error happen, pong will use HTTPErrorHandle to handle this request
 		// default is response with code 500, and string inter server error
-		HTTPErrorHandle    func(error, *Context)
+		HTTPErrorHandle func(error, *Context)
 		// SessionManager used to store and update value in session when pong has EnableSession
 		// default SessionManager store data in memory
-		SessionManager     SessionManager
+		SessionManager SessionManager
 	}
 )
 

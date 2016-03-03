@@ -277,7 +277,7 @@ func TestAutoBind(t *testing.T) {
 func TestUpdateFile(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	filePath := "test_resource/html/index.html"
+	filePath := "_test/html/index.html"
 	root.Post("/hi", func(c *Context) {
 		file, header, err := c.Request.File("file")
 		if err != nil {
@@ -324,7 +324,7 @@ func TestBindContentTypeNotSupport(t *testing.T) {
 		t.Log(`TestBindContentTypeNotSupport`)
 	})
 	defer func() {
-		file, _ := os.Open("test_resource/html/index.html")
+		file, _ := os.Open("_test/html/index.html")
 		_, err := http.Post(baseURL+"/hi", "ContentTypeNotSupport", file)
 		if err != nil {
 			t.Error(err)

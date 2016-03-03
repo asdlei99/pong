@@ -20,9 +20,9 @@ type Router struct {
 
 func newRouter(pong *Pong) *Router {
 	return &Router{
-		pong:           pong,
-		subRoutersMap:  make(map[string]*Router),
-		subHandlesMap:  make(map[subHandlesMapKey]HandleFunc),
+		pong:          pong,
+		subRoutersMap: make(map[string]*Router),
+		subHandlesMap: make(map[subHandlesMapKey]HandleFunc),
 	}
 }
 
@@ -33,7 +33,7 @@ func (r *Router) registerRouter(steps []string) *Router {
 			child = parent.subRoutersMap[":"]
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
-					fmt.Errorf("(%s) conflict (%s)\n", step, k + parent.paramName)
+					fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
 				}
 				child = newRouter(parent.pong)
 				parent.paramName = step[1:]
@@ -44,7 +44,7 @@ func (r *Router) registerRouter(steps []string) *Router {
 			if child == nil {
 				for k, _ := range parent.subRoutersMap {
 					if k == step || k == ":" {
-						fmt.Errorf("(%s) conflict (%s)\n", step, k + parent.paramName)
+						fmt.Errorf("(%s) conflict (%s)\n", step, k+parent.paramName)
 					}
 				}
 				child = newRouter(parent.pong)
@@ -60,7 +60,7 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 	if len(step) > 0 && step[0] == ':' {
 		for k, _ := range r.subHandlesMap {
 			if k.method == method && k.path == ":" {
-				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path + r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
 			}
 		}
 		r.paramName = step[1:]
@@ -68,7 +68,7 @@ func (r *Router) registerHandle(step string, method string, handle HandleFunc) {
 	} else {
 		for k, _ := range r.subHandlesMap {
 			if (step == k.path && method == k.method) || k.path == ":" {
-				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path + r.paramName, k.method)
+				fmt.Errorf("(%s %s) conflict (%s %s)\n", step, method, k.path+r.paramName, k.method)
 			}
 		}
 		r.subHandlesMap[subHandlesMapKey{step, method}] = handle
@@ -80,7 +80,7 @@ func (r *Router) register(path string, method string, handle HandleFunc) {
 	stepsLength := len(steps)
 	if stepsLength == 1 {
 		r.registerHandle(steps[0], method, handle)
-	}else {
+	} else {
 		lastIndex := stepsLength - 1
 		router := r.registerRouter(steps[0:lastIndex])
 		lastStep := steps[lastIndex]

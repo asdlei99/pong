@@ -71,7 +71,7 @@ func TestHTTPErrorHandle(t *testing.T) {
 func TestLoadTemplateGlobError(t *testing.T) {
 	po, baseURL := runPong()
 	po.LoadTemplateGlob("/no/this/file/")
-	po.LoadTemplateGlob("test_resource/html/*.html")
+	po.LoadTemplateGlob("_test/html/*.html")
 	po.Root.Get("/render", func(c *Context) {
 		c.Response.Render("/no/this/file.html", nil)
 	})

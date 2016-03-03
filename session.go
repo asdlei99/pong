@@ -130,7 +130,7 @@ func (pong *Pong) EnableSession() {
 			goto noSessionID
 		}
 		return
-		noSessionID:
+	noSessionID:
 		{
 			c.Session.id = c.pong.SessionManager.NewSession()
 			c.Response.Cookie(&http.Cookie{

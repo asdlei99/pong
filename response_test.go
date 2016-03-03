@@ -166,7 +166,7 @@ func TestFile(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	root.Get("/file", func(c *Context) {
-		c.Response.File("test_resource/html/index.html")
+		c.Response.File("_test/html/index.html")
 	})
 	defer func() {
 		res, err := http.Get(baseURL + "/file")
@@ -245,7 +245,7 @@ func TestHTML(t *testing.T) {
 func TestRender(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	po.LoadTemplateGlob("test_resource/html/*.html")
+	po.LoadTemplateGlob("_test/html/*.html")
 	root.Get("/render/:name", func(c *Context) {
 		name := c.Request.Param("name")
 		c.Response.Render(name, "中文")
