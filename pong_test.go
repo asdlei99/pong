@@ -1,36 +1,29 @@
 package pong
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"testing"
+	"fmt"
+	"strconv"
+	"github.com/gwuhaolin/pong/_test"
 )
 
-const (
-	notFindString = "404 page not found\n"
-)
-
-var (
-	listenPort int = 3000
-)
-
-func runPong() (pong *Pong, baseURL string) {
-	pong = New()
-	pong.Root.Middleware(func(c *Context) {
+func runPong() (po *Pong, baseURL string) {
+	po = New()
+	po.Root.Middleware(func(c *Context) {
 		req := c.Request.HTTPRequest
 		fmt.Println(req.Method, req.Host, req.RequestURI)
 	})
 	serverHasRun := make(chan bool)
 	go func() {
-		listenAddr := "127.0.0.1:" + strconv.Itoa(listenPort)
+		listenAddr := "127.0.0.1:" + strconv.Itoa(_test_util.ListenPort)
 		baseURL = "http://" + listenAddr
 		serverHasRun <- true
-		http.ListenAndServe(listenAddr, pong)
+		http.ListenAndServe(listenAddr, po)
 	}()
 	<-serverHasRun
-	listenPort++
+	_test_util.ListenPort++
 	return
 }
 

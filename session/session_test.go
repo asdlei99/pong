@@ -1,4 +1,4 @@
-package pong
+package session
 
 import (
 	"net/http"
@@ -6,13 +6,38 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"github.com/gwuhaolin/pong"
+	"github.com/gwuhaolin/pong/_test"
+	"fmt"
+	"strconv"
+	"github.com/gwuhaolin/pong/session/memory_session"
 )
+
+func runPong() (po *pong.Pong, baseURL string) {
+	po = pong.New()
+	po.Root.Middleware(func(c *pong.Context) {
+		req := c.Request.HTTPRequest
+		fmt.Println(req.Method, req.Host, req.RequestURI)
+	})
+	serverHasRun := make(chan bool)
+	go func() {
+		listenAddr := "127.0.0.1:" + strconv.Itoa(_test_util.ListenPort)
+		baseURL = "http://" + listenAddr
+		serverHasRun <- true
+		http.ListenAndServe(listenAddr, po)
+	}()
+	<-serverHasRun
+	_test_util.ListenPort++
+	return
+}
+
+var sessionManager = memory_session.New()
 
 func TestNoSession(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	root.Get("/hi", func(c *Context) {
+	root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("")
 	})
 	defer func() {
@@ -21,7 +46,7 @@ func TestNoSession(t *testing.T) {
 			t.Error(err)
 		} else {
 			cookies := res.Cookies()
-			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
+			if len(cookies) != 1 || cookies[0].Name != pong.SessionCookiesName {
 				t.Error(cookies)
 			}
 			t.Log(`TestHasSession`)
@@ -31,19 +56,19 @@ func TestNoSession(t *testing.T) {
 
 func TestHasSession(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: true,
-		Notes: []testNote{
+		Notes: []_test_util.TestNote{
 			{Text: "明天去放风筝"},
 			{Text: "今天我们去逛宜家啦"},
 		},
 	}
-	root.Get("/hi", func(c *Context) {
+	root.Get("/hi", func(c *pong.Context) {
 		sUser := c.Session.Get("user")
 		if !reflect.DeepEqual(sUser, user) {
 			t.Error(sUser)
@@ -51,11 +76,11 @@ func TestHasSession(t *testing.T) {
 		t.Log(`TestHasSession`)
 	})
 	defer func() {
-		sid := po.SessionManager.NewSession()
-		po.SessionManager.Write(sid, map[string]interface{}{"user": user})
+		sid := sessionManager.NewSession()
+		sessionManager.Write(sid, map[string]interface{}{"user": user})
 		jar, _ := cookiejar.New(nil)
 		url, _ := url.Parse(baseURL + "/hi")
-		jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: SessionCookiesName, Value: sid}})
+		jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: pong.SessionCookiesName, Value: sid}})
 		client := http.Client{
 			Jar: jar,
 		}
@@ -68,16 +93,20 @@ func TestHasSession(t *testing.T) {
 
 func TestUpdateSessionValue(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	root.Get("/initSession", func(c *Context) {
-		c.Session.Set("name", "吴浩麟")
-		c.Session.Set("age", 23)
+	root.Get("/initSession", func(c *pong.Context) {
+		c.Session.Set(map[string]interface{}{
+			"name": "吴浩麟",
+			"age": 23,
+		})
 		c.Response.String("initSession")
 	})
-	root.Get("/updateSessionValue", func(c *Context) {
-		c.Session.Set("name", "halwu")
-		c.Session.Set("age", 100)
+	root.Get("/updateSessionValue", func(c *pong.Context) {
+		c.Session.Set(map[string]interface{}{
+			"name": "halwu",
+			"age": 100,
+		})
 		c.Response.String("updateSessionValue")
 	})
 	defer func() {
@@ -87,11 +116,11 @@ func TestUpdateSessionValue(t *testing.T) {
 			t.Error(err)
 		} else {
 			cookies := res.Cookies()
-			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
+			if len(cookies) != 1 || cookies[0].Name != pong.SessionCookiesName {
 				t.Error(cookies)
 			}
 			sid := cookies[0].Value
-			sValue := po.SessionManager.Read(sid)
+			sValue := sessionManager.Read(sid)
 			if sValue["name"] != "吴浩麟" || sValue["age"] != 23 {
 				t.Error(sValue)
 			}
@@ -103,7 +132,7 @@ func TestUpdateSessionValue(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			} else {
-				sValue := po.SessionManager.Read(sid)
+				sValue := sessionManager.Read(sid)
 				if sValue["name"] != "halwu" || sValue["age"] != 100 {
 					t.Error(sValue)
 				}
@@ -115,15 +144,17 @@ func TestUpdateSessionValue(t *testing.T) {
 
 func TestResetSessionValue(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	root.Get("/initSession", func(c *Context) {
-		c.Session.Set("name", "吴浩麟")
-		c.Session.Set("age", 23)
+	root.Get("/initSession", func(c *pong.Context) {
+		c.Session.Set(map[string]interface{}{
+			"name": "吴浩麟",
+			"age": 23,
+		})
 		c.Response.String("initSession")
 	})
-	root.Get("/resetSessionValue", func(c *Context) {
-		c.Session.Reset()
+	root.Get("/resetSessionValue", func(c *pong.Context) {
+		c.ResetSession()
 		c.Response.String("resetSessionValue")
 	})
 	defer func() {
@@ -133,7 +164,7 @@ func TestResetSessionValue(t *testing.T) {
 			t.Error(err)
 		} else {
 			cookies := res.Cookies()
-			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
+			if len(cookies) != 1 || cookies[0].Name != pong.SessionCookiesName {
 				t.Error(cookies)
 			}
 			sid := cookies[0].Value
@@ -149,10 +180,10 @@ func TestResetSessionValue(t *testing.T) {
 				if sid2 == sid {
 					t.Error("sid should be diff")
 				}
-				if po.SessionManager.Read(sid) != nil {
+				if sessionManager.Read(sid) != nil {
 					t.Error("old sid value in session store should nil")
 				}
-				sValue := po.SessionManager.Read(sid2)
+				sValue := sessionManager.Read(sid2)
 				if sValue["name"] != "吴浩麟" || sValue["age"] != 23 {
 					t.Error(sValue)
 				}
@@ -164,15 +195,17 @@ func TestResetSessionValue(t *testing.T) {
 
 func TestDestorySession(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	root.Get("/initSession", func(c *Context) {
-		c.Session.Set("name", "吴浩麟")
-		c.Session.Set("age", 23)
+	root.Get("/initSession", func(c *pong.Context) {
+		c.Session.Set(map[string]interface{}{
+			"name": "吴浩麟",
+			"age": 23,
+		})
 		c.Response.String("initSession")
 	})
-	root.Get("/destorySessionValue", func(c *Context) {
-		c.Session.Destory()
+	root.Get("/destorySessionValue", func(c *pong.Context) {
+		c.DestorySession()
 		c.Response.String("destorySessionValue")
 	})
 	defer func() {
@@ -182,7 +215,7 @@ func TestDestorySession(t *testing.T) {
 			t.Error(err)
 		} else {
 			cookies := res.Cookies()
-			if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
+			if len(cookies) != 1 || cookies[0].Name != pong.SessionCookiesName {
 				t.Error(cookies)
 			}
 			sid := cookies[0].Value
@@ -194,11 +227,11 @@ func TestDestorySession(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			} else {
-				if po.SessionManager.Read(sid) != nil {
+				if sessionManager.Read(sid) != nil {
 					t.Error("old sid value in session store should nil")
 				}
 				removeCookieHeader := res.Header.Get("Set-Cookie")
-				if removeCookieHeader != SessionCookiesName+"=; Max-Age=0" {
+				if removeCookieHeader != pong.SessionCookiesName + "=; Max-Age=0" {
 					t.Error(removeCookieHeader)
 				}
 			}
@@ -209,9 +242,9 @@ func TestDestorySession(t *testing.T) {
 
 func TestCheaterSession(t *testing.T) {
 	po, baseURL := runPong()
-	po.EnableSession()
+	po.EnableSession(sessionManager)
 	root := po.Root
-	root.Get("/hi", func(c *Context) {
+	root.Get("/hi", func(c *pong.Context) {
 		c.Response.String("initSession")
 	})
 	defer func() {
@@ -223,14 +256,14 @@ func TestCheaterSession(t *testing.T) {
 			jar, _ := cookiejar.New(nil)
 			url, _ := url.Parse(baseURL + "/hi")
 			cheaterSid := "cheaterSid-cheaterSid"
-			jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: SessionCookiesName, Value: cheaterSid}})
+			jar.SetCookies(url, []*http.Cookie{&http.Cookie{Name: pong.SessionCookiesName, Value: cheaterSid}})
 			client.Jar = jar
 			res, err = client.Get(url.String())
 			if err != nil {
 				t.Error(err)
 			} else {
 				cookies := res.Cookies()
-				if len(cookies) != 1 || cookies[0].Name != SessionCookiesName {
+				if len(cookies) != 1 || cookies[0].Name != pong.SessionCookiesName {
 					t.Error(cookies)
 				}
 			}

@@ -13,19 +13,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"github.com/gwuhaolin/pong/_test"
 )
-
-type testUser struct {
-	Name  string
-	Age   int
-	Money float64
-	Notes []testNote
-	Alive bool
-}
-
-type testNote struct {
-	Text string
-}
 
 func TestParam(t *testing.T) {
 	po, baseURL := runPong()
@@ -49,7 +38,7 @@ func TestParam(t *testing.T) {
 		}
 		t.Log(`TestParam`)
 	})
-	defer http.Post(baseURL+"/user/123/update/更新", textPlainCharsetUTF8, strings.NewReader(""))
+	defer http.Post(baseURL + "/user/123/update/更新", textPlainCharsetUTF8, strings.NewReader(""))
 }
 
 func TestQuery(t *testing.T) {
@@ -87,10 +76,10 @@ func TestForm(t *testing.T) {
 		}
 		t.Log(`TestForm`)
 	})
-	defer http.PostForm(baseURL+"/small", url.Values{
+	defer http.PostForm(baseURL + "/small", url.Values{
 		"data": []string{small},
 	})
-	defer http.PostForm(baseURL+"/big", url.Values{
+	defer http.PostForm(baseURL + "/big", url.Values{
 		"data": []string{big},
 	})
 }
@@ -98,18 +87,18 @@ func TestForm(t *testing.T) {
 func TestBindJSON(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: true,
-		Notes: []testNote{
+		Notes: []_test_util.TestNote{
 			{Text: "明天去放风筝"},
 			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Post("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.BindJSON(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -117,24 +106,24 @@ func TestBindJSON(t *testing.T) {
 		t.Log(`TestBindJSON`)
 	})
 	bs, _ := json.Marshal(user)
-	defer http.Post(baseURL+"/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindXML(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: false,
-		Notes: []testNote{
+		Notes: []_test_util.TestNote{
 			{Text: "明天去放风筝"},
 			{Text: "今天我们去逛宜家啦"},
 		},
 	}
 	root.Post("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.BindXML(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -142,20 +131,20 @@ func TestBindXML(t *testing.T) {
 		t.Log(`TestBindXML root.Post("/hi")`)
 	})
 	bs, _ := xml.Marshal(user)
-	defer http.Post(baseURL+"/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestBindApplicationForm(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: true,
 	}
 	root.Post("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.BindForm(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -170,7 +159,7 @@ func TestBindApplicationForm(t *testing.T) {
 		}
 		t.Log(`TestBindForm root.Post("/hi")`)
 	})
-	defer http.PostForm(baseURL+"/hi", url.Values{
+	defer http.PostForm(baseURL + "/hi", url.Values{
 		"Name":  []string{"吴浩麟"},
 		"Age":   []string{"23"},
 		"Money": []string{"123.456"},
@@ -181,14 +170,14 @@ func TestBindApplicationForm(t *testing.T) {
 func TestBindMultipartForm(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: true,
 	}
 	root.Post("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.BindForm(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -208,20 +197,20 @@ func TestBindMultipartForm(t *testing.T) {
 		writer.WriteField("Money", "123.456")
 		writer.WriteField("Alive", "true")
 		writer.Close()
-		client.Post(baseURL+"/hi", writer.FormDataContentType(), body)
+		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
 	}()
 }
 
 func TestBindQuery(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 	}
 	root.Get("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.BindQuery(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -242,13 +231,13 @@ func TestBindQuery(t *testing.T) {
 func TestAutoBind(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 	}
 	root.Post("/hi", func(c *Context) {
-		bindUser := testUser{}
+		bindUser := _test_util.TestUser{}
 		c.Request.AutoBind(&bindUser)
 		if !reflect.DeepEqual(bindUser, user) {
 			t.Error(bindUser, user)
@@ -263,15 +252,15 @@ func TestAutoBind(t *testing.T) {
 		}
 		t.Log(`TestAutoBind`)
 	})
-	defer http.PostForm(baseURL+"/hi", url.Values{
+	defer http.PostForm(baseURL + "/hi", url.Values{
 		"Name":  []string{"吴浩麟"},
 		"Age":   []string{"23"},
 		"Money": []string{"123.456"},
 	})
 	bs, _ := json.Marshal(user)
-	defer http.Post(baseURL+"/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL + "/hi", applicationJSONCharsetUTF8, bytes.NewReader(bs))
 	bs, _ = xml.Marshal(user)
-	defer http.Post(baseURL+"/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
+	defer http.Post(baseURL + "/hi", applicationXMLCharsetUTF8, bytes.NewReader(bs))
 }
 
 func TestUpdateFile(t *testing.T) {
@@ -304,7 +293,7 @@ func TestUpdateFile(t *testing.T) {
 		filePart, _ := writer.CreateFormFile("file", filePath)
 		io.Copy(filePart, file)
 		writer.Close()
-		client.Post(baseURL+"/hi", writer.FormDataContentType(), body)
+		client.Post(baseURL + "/hi", writer.FormDataContentType(), body)
 	}()
 }
 
@@ -312,7 +301,7 @@ func TestBindContentTypeNotSupport(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
 	root.Post("/hi", func(c *Context) {
-		user := &testUser{}
+		user := &_test_util.TestUser{}
 		err := c.Request.BindForm(user)
 		if err != ErrorTypeNotSupport {
 			t.Error(err)
@@ -325,7 +314,7 @@ func TestBindContentTypeNotSupport(t *testing.T) {
 	})
 	defer func() {
 		file, _ := os.Open("_test/html/index.html")
-		_, err := http.Post(baseURL+"/hi", "ContentTypeNotSupport", file)
+		_, err := http.Post(baseURL + "/hi", "ContentTypeNotSupport", file)
 		if err != nil {
 			t.Error(err)
 		}
@@ -373,7 +362,7 @@ func TestBind(t *testing.T) {
 		}
 		t.Log(`TestBind`)
 	})
-	defer http.PostForm(baseURL+"/hi", url.Values{
+	defer http.PostForm(baseURL + "/hi", url.Values{
 		"Int":     []string{"123"},
 		"Int8":    []string{""},
 		"Int16":   []string{""},
@@ -398,7 +387,7 @@ func TestBind(t *testing.T) {
 		}
 		t.Log(`TestBind`)
 	})
-	defer http.PostForm(baseURL+"/err", url.Values{
+	defer http.PostForm(baseURL + "/err", url.Values{
 		"Bool": []string{"abc"},
 	})
 }

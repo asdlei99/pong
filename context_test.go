@@ -4,17 +4,18 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"github.com/gwuhaolin/pong/_test"
 )
 
 func TestContext(t *testing.T) {
 	po, baseURL := runPong()
 	root := po.Root
-	user := testUser{
+	user := _test_util.TestUser{
 		Name:  "吴浩麟",
 		Age:   23,
 		Money: 123.456,
 		Alive: true,
-		Notes: []testNote{
+		Notes: []_test_util.TestNote{
 			{Text: "明天去放风筝"},
 			{Text: "今天我们去逛宜家啦"},
 		},

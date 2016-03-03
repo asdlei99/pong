@@ -66,13 +66,13 @@ type (
 		// 404 not find handle
 		// when pong's router can't find a handle to request' URL,pong will use NotFindHandle to handle this request
 		// default is response with code 404, and string page not find
-		NotFindHandle HandleFunc
+		NotFindHandle   HandleFunc
 		// when send response to client cause error happen, pong will use HTTPErrorHandle to handle this request
 		// default is response with code 500, and string inter server error
 		HTTPErrorHandle func(error, *Context)
 		// SessionManager used to store and update value in session when pong has EnableSession
 		// default SessionManager store data in memory
-		SessionManager SessionManager
+		sessionManager  SessionIO
 	}
 )
 

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"github.com/gwuhaolin/pong/_test"
 )
 
 func httpGetAssert(path string, responseStr string, t *testing.T) {
@@ -65,103 +66,103 @@ func TestRouter(t *testing.T) {
 	root.Get("/", func(c *Context) {
 		c.Response.String("/")
 	})
-	defer httpGetAssert(baseURL+"", "/", t)
-	defer httpGetAssert(baseURL+"/", "/", t)
+	defer httpGetAssert(baseURL + "", "/", t)
+	defer httpGetAssert(baseURL + "/", "/", t)
 	root.Post("/", func(c *Context) {
 		c.Response.String("POST /")
 	})
-	defer httpPostAssert(baseURL+"/", applicationForm, "", "POST /", t)
+	defer httpPostAssert(baseURL + "/", applicationForm, "", "POST /", t)
 
 	root.Get("/hi", func(c *Context) {
 		c.Response.String("/hi")
 	})
-	defer httpGetAssert(baseURL+"/hi", "/hi", t)
+	defer httpGetAssert(baseURL + "/hi", "/hi", t)
 
 	root.Post("/hi", func(c *Context) {
 		c.Response.String("POST /hi")
 	})
-	defer httpPostAssert(baseURL+"/hi", applicationForm, "", "POST /hi", t)
+	defer httpPostAssert(baseURL + "/hi", applicationForm, "", "POST /hi", t)
 
 	root.Get("/query", func(c *Context) {
 		c.Response.String("/query?name=" + c.Request.Query("name"))
 	})
-	defer httpGetAssert(baseURL+"/query", "/query?name=", t)
-	defer httpGetAssert(baseURL+"/query?name=吴浩麟", "/query?name=吴浩麟", t)
+	defer httpGetAssert(baseURL + "/query", "/query?name=", t)
+	defer httpGetAssert(baseURL + "/query?name=吴浩麟", "/query?name=吴浩麟", t)
 
 	root.Any("/any", func(c *Context) {
 		c.Response.String("/any")
 	})
-	defer httpGetAssert(baseURL+"/any", "/any", t)
-	defer httpPostAssert(baseURL+"/any", applicationForm, "", "/any", t)
+	defer httpGetAssert(baseURL + "/any", "/any", t)
+	defer httpPostAssert(baseURL + "/any", applicationForm, "", "/any", t)
 
 	root.Get("/:param", func(c *Context) {
 		c.Response.String("/:" + c.Request.Param("param"))
 	})
-	defer httpGetAssert(baseURL+"/a", "/:a", t)
+	defer httpGetAssert(baseURL + "/a", "/:a", t)
 
 	root.Get("/param/:id", func(c *Context) {
 		c.Response.String("/param/:" + c.Request.Param("id"))
 	})
-	defer httpGetAssert(baseURL+"/param/123", "/param/:123", t)
+	defer httpGetAssert(baseURL + "/param/123", "/param/:123", t)
 
 	root.Get("/param/a/:id", func(c *Context) {
 		c.Response.String("/param/a/:" + c.Request.Param("id"))
 	})
-	defer httpGetAssert(baseURL+"/param/a/123", "/param/a/:123", t)
+	defer httpGetAssert(baseURL + "/param/a/123", "/param/a/:123", t)
 
 	root.Get("/user/:id/update/:data", func(c *Context) {
 		c.Response.String("/user/" + c.Request.Param("id") + "/update/" + c.Request.Param("data"))
 	})
-	defer httpGetAssert(baseURL+"/user/123/update/{age:24}", "/user/123/update/{age:24}", t)
+	defer httpGetAssert(baseURL + "/user/123/update/{age:24}", "/user/123/update/{age:24}", t)
 
 	root.Get("/note/:id/update/:data", func(c *Context) {
 		c.Response.String("/note/" + c.Request.Param("id") + "/update/" + c.Request.Param("data"))
 	})
-	defer httpGetAssert(baseURL+"/note/123/update/{age:24}", "/note/123/update/{age:24}", t)
+	defer httpGetAssert(baseURL + "/note/123/update/{age:24}", "/note/123/update/{age:24}", t)
 
 	root.Get("/note/:id/remove", func(c *Context) {
 		c.Response.String("/note/" + c.Request.Param("id") + "/remove")
 	})
-	defer httpGetAssert(baseURL+"/note/123/remove", "/note/123/remove", t)
+	defer httpGetAssert(baseURL + "/note/123/remove", "/note/123/remove", t)
 
 	sub := root.Router("/sub")
 
 	sub.Get("/hi", func(c *Context) {
 		c.Response.String("/sub/hi")
 	})
-	defer httpGetAssert(baseURL+"/sub/hi", "/sub/hi", t)
+	defer httpGetAssert(baseURL + "/sub/hi", "/sub/hi", t)
 
 	sub.Get("/note/:param", func(c *Context) {
 		c.Response.String("/sub/note/:" + c.Request.Param("param"))
 	})
-	defer httpGetAssert(baseURL+"/sub/note/a", "/sub/note/:a", t)
+	defer httpGetAssert(baseURL + "/sub/note/a", "/sub/note/:a", t)
 
 	sub2 := sub.Router("/sub2")
 	sub2.Get("", func(c *Context) {
 		c.Response.String("/sub/sub2")
 	})
-	defer httpGetAssert(baseURL+"/sub/sub2", notFindString, t)
+	defer httpGetAssert(baseURL + "/sub/sub2", _test_util.NotFindString, t)
 
 	sub2.Get("/", func(c *Context) {
 		c.Response.String("/sub/sub2/")
 	})
-	defer httpGetAssert(baseURL+"/sub/sub2/", notFindString, t)
+	defer httpGetAssert(baseURL + "/sub/sub2/", _test_util.NotFindString, t)
 
 	sub2.Get("/hi", func(c *Context) {
 		c.Response.String("/sub/sub2/hi")
 	})
-	defer httpGetAssert(baseURL+"/sub/sub2/hi", "/sub/sub2/hi", t)
+	defer httpGetAssert(baseURL + "/sub/sub2/hi", "/sub/sub2/hi", t)
 
 	sub2.Post("/:param/hi", func(c *Context) {
 		c.Response.String("POST /sub/sub2/:" + c.Request.Param("param"))
 	})
-	defer httpPostAssert(baseURL+"/sub/sub2/中文/hi", applicationForm, "", "POST /sub/sub2/:中文", t)
+	defer httpPostAssert(baseURL + "/sub/sub2/中文/hi", applicationForm, "", "POST /sub/sub2/:中文", t)
 
 	sub2.Any("/user/any", func(c *Context) {
 		c.Response.String("/sub/sub2/user/any")
 	})
-	defer httpGetAssert(baseURL+"/sub/sub2/user/any", "/sub/sub2/user/any", t)
-	defer httpPostAssert(baseURL+"/sub/sub2/user/any", applicationForm, "", "/sub/sub2/user/any", t)
+	defer httpGetAssert(baseURL + "/sub/sub2/user/any", "/sub/sub2/user/any", t)
+	defer httpPostAssert(baseURL + "/sub/sub2/user/any", applicationForm, "", "/sub/sub2/user/any", t)
 }
 
 // /:name conflict with /path, but use /path first
@@ -174,8 +175,8 @@ func TestRouterConflict_Handle_PathOverParam(t *testing.T) {
 	root.Get("/:name", func(c *Context) {
 		c.Response.String(c.Request.Param("name"))
 	})
-	defer httpGetAssert(baseURL+"/path", "path", t)
-	defer httpGetAssert(baseURL+"/hal", "hal", t)
+	defer httpGetAssert(baseURL + "/path", "path", t)
+	defer httpGetAssert(baseURL + "/hal", "hal", t)
 }
 
 // /:name conflict with /path, but use /path first
@@ -188,7 +189,7 @@ func TestRouterConflict_Handle_ParamOverParam(t *testing.T) {
 	root.Get("/:name", func(c *Context) {
 		c.Response.String("name=" + c.Request.Param("name"))
 	})
-	defer httpGetAssert(baseURL+"/abc", "name=abc", t)
+	defer httpGetAssert(baseURL + "/abc", "name=abc", t)
 }
 
 func TestRouterMW(t *testing.T) {
@@ -206,7 +207,7 @@ func TestRouterMW(t *testing.T) {
 	b.Middleware(func(c *Context) {
 		c.Response.String("b")
 	})
-	defer httpGetAssert(baseURL+"/a/b/c/hi", "abc", t)
+	defer httpGetAssert(baseURL + "/a/b/c/hi", "abc", t)
 }
 
 func TestParamInRouter(t *testing.T) {
@@ -220,7 +221,7 @@ func TestParamInRouter(t *testing.T) {
 	c.Get("hi", func(c *Context) {
 		c.Response.String(c.Request.Param("b"))
 	})
-	defer httpGetAssert(baseURL+"/a/hal/c/hi", "bhal", t)
+	defer httpGetAssert(baseURL + "/a/hal/c/hi", "bhal", t)
 }
 
 func TestRouterConflict(t *testing.T) {

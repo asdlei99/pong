@@ -198,12 +198,12 @@ Pong provide convenient way to parse request's params and bind to a struct
 parse request's body data as JSON and use standard lib json.Unmarshal to bind data to struct
 ```go
     type testUser struct {
-    	Name  string
-    	Age   int
+    	Name  string `json:"name"`
+    	Age   int `json:"age"`
     }
     // post / with a json string will see json again
     root.Post("/", func(c *Context) {
-		user := testUser{}
+		user := _test_util.TestUser{}
 		c.Request.BindJSON(&bindUser)
 		c.Response.JSON(user)
 	})
@@ -213,7 +213,7 @@ parse request's body data as XML and use standard lib XML.Unmarshal to bind data
 ```go
     // post / with a xml string will see xml again
     root.Post("/", func(c *Context) {
-		user := testUser{}
+		user := _test_util.TestUser{}
 		c.Request.BindXML(&bindUser)
 		c.Response.XML(user)
 	})
@@ -223,7 +223,7 @@ parse request's body post form as map and bind data to struct use filed name
 ```go
     // post / with a name=hal&age=23 will see json "{"name":"hal","age":23}"
     root.Post("/", func(c *Context) {
-		user := testUser{}
+		user := _test_util.TestUser{}
 		c.Request.BindXML(&bindUser)
 		c.Response.JSON(user)
 	})
@@ -233,7 +233,7 @@ parse request's query params as map and bind data to struct use filed name
 ```go
     // visit /?name=hal&age=23 will see json "{"name":"hal","age":23}"
     root.Post("/", func(c *Context) {
-		user := testUser{}
+		user := _test_util.TestUser{}
 		c.Request.BindQuery(&bindUser)
 		c.Response.JSON(user)
 	})
@@ -250,7 +250,7 @@ auto bind will look request's http Header `ContentType`
     // visit /?name=hal&age=23 will see json "{"name":"hal","age":23}"
     // post / with a xml will see "{"name":"hal","age":23}"
     root.Post("/", func(c *Context) {
-		user := testUser{}
+		user := _test_util.TestUser{}
 		c.Request.AutoBind(&bindUser)
 		c.Response.JSON(user)
 	})
@@ -273,7 +273,7 @@ parse data by standard lib's json.Marshal and then send to client will wrap json
 ```go
     // visit /hi will see json "callback({"name":"hal","age":23})"
     root.Get("/hi", func(c *Context) {
-        user := testUser{
+        user := _test_util.TestUser{
                 Name:"hal",
                 Age:23,
         }
@@ -322,8 +322,6 @@ send HTML response to client by render HTML template with give data, LoadTemplat
 ### Reset
 ### Destory
 ### Store Session In Redis
-### Store Session In MongoDB
-### Store Session In SQL
 ### Write Your Session Manager
 
 # LICENSE

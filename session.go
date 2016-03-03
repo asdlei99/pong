@@ -1,38 +1,34 @@
 package pong
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"io"
 	"net/http"
+	"fmt"
 )
 
 // SessionManager define a interface to handle Session's read and write
 // pong provide a in memory session manager as default stand by SessionManager interface
 // you can define yourself's SessionManager like store session to Redis,MongoDB,File
-type SessionManager interface {
+type SessionIO interface {
 	// NewSession should generate a sessionId which is unique compare to existent,and return this sessionId
 	// this sessionId string will store in browser by cookies,so the sessionId string should compatible with cookies value rule
 	NewSession() (sessionId string)
 	// NewSession should do operation to remove an session's data in store by give sessionId
-	Destory(sessionId string)
+	Destory(sessionId string) error
 	// Reset should update the give old sessionId to a new id,but the value should be the same
-	Reset(oldSessionId string) (newSessionId string)
+	Reset(oldSessionId string) (newSessionId string, err error)
 	// return whether this sessionId is existent in store
 	Has(sessionId string) bool
-	// read the value point to the give sessionId
-	Read(sessionId string) (value map[string]interface{})
+	// read the whole value point to the give sessionId
+	Read(sessionId string) (wholeValue map[string]interface{})
 	// update the sessionId's value to store
 	// the give value just has changed part not all of the value point to sessionId
-	Write(sessionId string, value map[string]interface{})
+	Write(sessionId string, changes map[string]interface{}) error
 }
 
 type Session struct {
-	pong               *Pong
-	id                 string
-	idHasChange        bool
-	store              map[string]interface{}
-	hasChangeValueFlag []string
+	pong  *Pong
+	id    string
+	store map[string]interface{}
 }
 
 // get the value by name
@@ -42,77 +38,57 @@ func (s *Session) Get(name string) interface{} {
 
 // set a value with name
 // can be used to overwrite old value
-func (s *Session) Set(name string, value interface{}) {
-	s.store[name] = value
-	s.hasChangeValueFlag = append(s.hasChangeValueFlag, name)
+func (s *Session) Set(changes map[string]interface{}) error {
+	for key, value := range changes {
+		s.store[key] = value
+	}
+	return s.pong.sessionManager.Write(s.id, changes)
 }
 
 // update old sessionId with new one
 // this will update sessionId store in browser's cookie and session manager's store
-func (s *Session) Reset() {
-	sessionManager := s.pong.SessionManager
-	s.id = sessionManager.Reset(s.id)
-	s.idHasChange = true
+func (c *Context) ResetSession() error {
+	sessionManager := c.pong.sessionManager
+	newId, err := sessionManager.Reset(c.Session.id)
+	if err != nil {
+		return err
+	}
+	c.Session.id = newId
+	//update sessionID in cookies
+	c.Response.Cookie(&http.Cookie{
+		HttpOnly: true,
+		Name:     SessionCookiesName,
+		Value:    newId,
+	})
+	return nil
 }
 
 // remove sessionId
 // this will remove sessionId store in browser's cookie and session manager's store
-func (s *Session) Destory() {
-	s.pong.SessionManager.Destory(s.id)
-	s.id = ""
-	s.idHasChange = true
-}
-
-//default in memory sessionManager
-type memorySessionManager struct {
-	SessionManager
-	store map[string]map[string]interface{}
-}
-
-func (manager *memorySessionManager) NewSession() (sessionId string) {
-	bs := make([]byte, 8)
-	io.ReadFull(rand.Reader, bs)
-	sessionId = base64.URLEncoding.EncodeToString(bs)
-	if manager.Has(sessionId) {
-		return manager.NewSession()
+func (c *Context) DestorySession() error {
+	err := c.pong.sessionManager.Destory(c.Session.id)
+	if err != nil {
+		return err
 	}
-	manager.store[sessionId] = make(map[string]interface{})
-	return sessionId
-}
-
-func (manager *memorySessionManager) Destory(sessionId string) {
-	delete(manager.store, sessionId)
-}
-
-func (manager *memorySessionManager) Reset(oldSessionId string) (newSessionId string) {
-	newSessionId = manager.NewSession()
-	manager.store[newSessionId] = manager.store[oldSessionId]
-	delete(manager.store, oldSessionId)
-	return
-}
-
-func (manager *memorySessionManager) Has(sessionId string) bool {
-	return manager.store[sessionId] != nil
-}
-
-func (manager *memorySessionManager) Read(sessionId string) map[string]interface{} {
-	return manager.store[sessionId]
-}
-
-func (manager *memorySessionManager) Write(sessionId string, value map[string]interface{}) {
-	manager.store[sessionId] = value
+	c.Session = nil
+	//delete sessionID in cookies
+	c.Response.Cookie(&http.Cookie{
+		Name:   SessionCookiesName,
+		MaxAge: -1,
+	})
+	return nil
 }
 
 // if you want you HTTP session call this
 // EnableSession will use memory to store session data
 // EnableSession will read sessionId from request cookies value by name SessionCookiesName default is "SESSIONID" as sessionId
 // EnableSession will cause performance drop compare to not use Session
-func (pong *Pong) EnableSession() {
-	if pong.SessionManager == nil {
-		pong.SessionManager = &memorySessionManager{
-			store: make(map[string]map[string]interface{}),
-		}
+func (pong *Pong) EnableSession(sessionManager SessionIO) {
+	if pong.sessionManager != nil {
+		fmt.Errorf("sessionManager %v has been set, don't call EnableSession more than once", pong.sessionManager)
+		return
 	}
+	pong.sessionManager = sessionManager
 	pong.Root.Middleware(func(c *Context) {
 		c.Session = &Session{
 			pong:  c.pong,
@@ -121,8 +97,8 @@ func (pong *Pong) EnableSession() {
 		sCookie, err := c.Request.HTTPRequest.Cookie(SessionCookiesName)
 		if err == nil {
 			c.Session.id = sCookie.Value
-			if c.pong.SessionManager.Has(c.Session.id) {
-				c.Session.store = c.pong.SessionManager.Read(c.Session.id)
+			if c.pong.sessionManager.Has(c.Session.id) {
+				c.Session.store = c.pong.sessionManager.Read(c.Session.id)
 			} else {
 				goto noSessionID
 			}
@@ -130,9 +106,9 @@ func (pong *Pong) EnableSession() {
 			goto noSessionID
 		}
 		return
-	noSessionID:
+		noSessionID:
 		{
-			c.Session.id = c.pong.SessionManager.NewSession()
+			c.Session.id = c.pong.sessionManager.NewSession()
 			c.Response.Cookie(&http.Cookie{
 				HttpOnly: true,
 				Name:     SessionCookiesName,
@@ -140,30 +116,5 @@ func (pong *Pong) EnableSession() {
 			})
 		}
 
-	})
-	pong.TailMiddleware(func(c *Context) {
-		if c.Session.idHasChange {
-			if len(c.Session.id) > 0 {
-				//update sessionID in cookies
-				c.Response.Cookie(&http.Cookie{
-					HttpOnly: true,
-					Name:     SessionCookiesName,
-					Value:    c.Session.id,
-				})
-			} else {
-				//delete sessionID in cookies
-				c.Response.Cookie(&http.Cookie{
-					Name:   SessionCookiesName,
-					MaxAge: -1,
-				})
-			}
-		}
-		if len(c.Session.hasChangeValueFlag) > 0 {
-			change := make(map[string]interface{})
-			for _, name := range c.Session.hasChangeValueFlag {
-				change[name] = c.Session.store[name]
-			}
-			c.pong.SessionManager.Write(c.Session.id, change)
-		}
 	})
 }
