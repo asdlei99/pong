@@ -52,8 +52,6 @@ It has **no dependency** small and clear, support **route conflict tips**.
 
 # Principle
 
-# Catalogue
-
 # Listen and Server
 pong not provide Listen and Server, it just do thing about route and handle, so you can should standard lib's function
 ### HTTPS
@@ -306,24 +304,103 @@ send HTML response to client by render HTML template with give data, LoadTemplat
     po.LoadTemplateGlob("*.html")
     // visit /index will see index.html template render by data
     root.Get("/:name", func(c *Context) {
+
     		c.Response.Render(name, dataToRender)
     })
 ````
 
 # Middleware
+pong's Middleware is a Handle Function which define as `func(*Context)`, in handle function you can use `Context` for a request to do what `Context` provide.
 ### Router Middleware
+pong's route tree is build by many sub router, pong.Root is the root router every request will go through. A router can set a list Middleware and every request go through this router will handle by register Middleware list in order.
+```go
+    root := po.Root
+    // a Router Middleware to log every request
+    root.Middleware(func(c *Context) {
+    		req := c.Request.HTTPRequest
+    		fmt.Println(req.Method, req.Host, req.RequestURI)
+    })
+```
 ### Tail Middleware
-### Log HTTP Request
-### Log HTTP Request To MongoDB
-### Write Your Middleware
+pong can set a list of Tail Middleware which will be execute before response data to client after all of the other middleware register in router has execute.
+```go
+    // a Tail Middleware to log every response
+    po.TailMiddleware(func(c *Context) {
+            res := c.Response
+            fmt.Println(req.StatusCode, req.Header())
+    })
+```
 
+# Config
+### Handle 404 not find
+when pong's router can't find a handle to request' URL, pong will use `NotFindHandle` to handle this request which will send response with code 404, and string 'page not find'. You can define your handle to rewrite `NotFindHandle`, for example:
+```go
+    // when 404 not find happen, will Redirect user to page /404.html
+    po.NotFindHandle = func(c *Context) {
+            c.Response.Redirect("/404.html")
+    }
+```
+### Error Handle
+when send response to client cause error happen, pong will use `HTTPErrorHandle` to handle this request, default is response with code 500, and string inter server error. You can define your handle to rewrite `HTTPErrorHandle`, for example:
+```go
+    // when 500 error happen, will Redirect user to page /500.html
+    po.HTTPErrorHandle = func(err error, c *Context) {
+            fmt.Errorf("%v",err)
+            c.Response.Redirect("/500.html")
+    }
+```
 # Session
+Pong provide session support, you can store data to memory or Redis. Also can write your session manager work with pong.
 ### Set and Get
-### Reset
-### Destory
+```go
+    // make a in memory session manager
+    sessionManager := memory_session.New()
+    // tell pong to enable session, and store data use in memory session manager
+	po.EnableSession(sessionManager)
+    // set a value with name to this session
+    root.Get("/a", func(c *Context) {
+    		c.Session.Set("keyName","value")
+    })
+    // get the value by name from this session
+    root.Get("/a", func(c *Context) {
+    		c.Session.Get("keyName")
+    })
+```
+### Reset Session
+update old sessionId with new one, this will update sessionId store in browser's cookie and session manager's store
+```go
+    // set a value with name to this session
+    root.Get("/a", func(c *Context) {
+    		c.ResetSession()
+    })
+```
+### Destory Session
+remove sessionId store in browser's cookie and session manager's store
+```go
+    // set a value with name to this session
+    root.Get("/a", func(c *Context) {
+    		c.DestorySession()
+    })
+```
 ### Store Session In Redis
+```go
+    // make a in memory session manager
+    sessionManager := redis_session.New()
+    // tell pong to enable session, and store data use in memory session manager
+	po.EnableSession(sessionManager)
+```
 ### Write Your Session Manager
+to write your session manager work with pong, you should implement the interface `SessionIO` which pong how to read and write session data. SessionIO define this methods:
+- `NewSession() (sessionId string)` : NewSession should generate a sessionId which is unique compare to existent,and return this sessionId,this sessionId string will store in browser by cookies,so the sessionId string should compatible with cookies value rule
+- `Destory(sessionId string) error` : Destory should do operation to remove an session's data in store by give sessionId
+- `Reset(oldSessionId string) (newSessionId string, err error)` : Reset should update the give old sessionId to a new id,but the value should be the same
+- `Has(sessionId string) bool` : return whether this sessionId is existent in store
+- `Read(sessionId string) (wholeValue map[string]interface{})` : read the whole value point to the give sessionId
+- `Write(sessionId string, changes map[string]interface{}) error` : update the sessionId's value to store, the give value just has changed part not all of the value point to sessionId
+See pong's build in session manager who implement interface `SessionIO` for example to learn how to write your session manager':
+- `memorySessionManager` : [memorySessionManager source code](https://github.com/gwuhaolin/pong/blob/master/session/memory_session/memory_session.go)
+- `redisSessionManager` : [redisSessionManager source code](https://github.com/gwuhaolin/pong/blob/master/session/redis_session/redis_session.go)
 
 # LICENSE
-The MIT License (MIT)
+The MIT License (MIT),
 Copyright (c) 2016 吴浩麟

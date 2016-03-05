@@ -12,5 +12,4 @@ script:
   - go test -v -coverprofile=pong.coverprofile
   - go test -v -coverprofile=session.coverprofile ./session/memory_session
   - $HOME/gopath/bin/gover
-  - ls
   - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci

@@ -5,14 +5,14 @@ import (
 	"fmt"
 )
 
-// SessionManager define a interface to handle Session's read and write
+// SessionIO define a interface to handle Session's read and write
 // pong provide a in memory session manager as default stand by SessionManager interface
 // you can define yourself's SessionManager like store session to Redis,MongoDB,File
 type SessionIO interface {
 	// NewSession should generate a sessionId which is unique compare to existent,and return this sessionId
 	// this sessionId string will store in browser by cookies,so the sessionId string should compatible with cookies value rule
 	NewSession() (sessionId string)
-	// NewSession should do operation to remove an session's data in store by give sessionId
+	// Destory should do operation to remove an session's data in store by give sessionId
 	Destory(sessionId string) error
 	// Reset should update the give old sessionId to a new id,but the value should be the same
 	Reset(oldSessionId string) (newSessionId string, err error)
@@ -31,12 +31,12 @@ type Session struct {
 	store map[string]interface{}
 }
 
-// get the value by name
+// get the value by name from this session
 func (s *Session) Get(name string) interface{} {
 	return s.store[name]
 }
 
-// set a value with name
+// set a value with name to this session
 // can be used to overwrite old value
 func (s *Session) Set(changes map[string]interface{}) error {
 	for key, value := range changes {
