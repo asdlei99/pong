@@ -397,10 +397,10 @@ to write your session manager work with pong, you should implement the interface
 - `Has(sessionId string) bool` : return whether this sessionId is existent in store
 - `Read(sessionId string) (wholeValue map[string]interface{})` : read the whole value point to the give sessionId
 - `Write(sessionId string, changes map[string]interface{}) error` : update the sessionId's value to store, the give value just has changed part not all of the value point to sessionId
+
 See pong's build in session manager who implement interface `SessionIO` for example to learn how to write your session manager':
 - `memorySessionManager` : [memorySessionManager source code](https://github.com/gwuhaolin/pong/blob/master/session/memory_session/memory_session.go)
 - `redisSessionManager` : [redisSessionManager source code](https://github.com/gwuhaolin/pong/blob/master/session/redis_session/redis_session.go)
 
 # LICENSE
-The MIT License (MIT),
-Copyright (c) 2016 吴浩麟
+Copyright (c) 2016 吴浩麟, The MIT License (MIT)

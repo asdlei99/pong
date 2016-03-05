@@ -20,6 +20,7 @@ func runPong() (po *Pong, baseURL string) {
 		listenAddr := "127.0.0.1:" + strconv.Itoa(_test_util.ListenPort)
 		baseURL = "http://" + listenAddr
 		serverHasRun <- true
+		fmt.Println("server listen on:" + listenAddr)
 		http.ListenAndServe(listenAddr, po)
 	}()
 	<-serverHasRun
